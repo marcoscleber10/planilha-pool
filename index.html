@@ -1,1552 +1,755 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liquidity Pool Manager - Dashboard Profissional</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>LP Quant Manager - Institutional</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* CSS Reset & Variables */
         :root {
-            --primary: #00d4aa;
-            --secondary: #7c3aed;
-            --accent: #f59e0b;
-            --bg-dark: #0a0e27;
-            --bg-card: #151a35;
-            --bg-hover: #1e2542;
-            --text-primary: #ffffff;
-            --text-secondary: #94a3b8;
-            --border: #2d3561;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
+            --bg: #0d1117;
+            --surface: #161b22;
+            --border: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent: #58a6ff;
+            --success: #3fb950;
+            --danger: #f85149;
+            --warning: #d29922;
+            --font-mono: 'Courier New', monospace;
         }
-
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg-dark);
+            background: var(--bg);
             color: var(--text-primary);
-            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.5;
         }
 
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-dark) 100%);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 2rem;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            backdrop-filter: blur(10px);
-        }
-
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            transition: color 0.3s;
-            font-weight: 500;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary);
-        }
-
-        .header-controls {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .chain-selector {
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.875rem;
-        }
-
-        .live-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid var(--success);
-            border-radius: 8px;
-            font-size: 0.875rem;
-            color: var(--success);
-        }
-
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--success);
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.2); }
-        }
-
-        .wallet-connect {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .wallet-connect:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 212, 170, 0.3);
-        }
-
-        /* Main Container */
+        /* Layout - Terminal Style */
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
-            padding: 2rem;
-        }
-
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            transition: transform 0.2s, border-color 0.2s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--primary);
-        }
-
-        .stat-header {
+            padding: 10px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
+            flex-direction: column;
+            height: 100vh;
         }
 
-        .stat-title {
+        /* Tabs Navigation */
+        .tabs {
+            display: flex;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 10px;
+        }
+        
+        .tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-right: 1px solid var(--border);
             color: var(--text-secondary);
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-
-        .stat-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-        }
-
-        .icon-primary { background: rgba(0, 212, 170, 0.2); color: var(--primary); }
-        .icon-secondary { background: rgba(124, 58, 237, 0.2); color: var(--secondary); }
-        .icon-accent { background: rgba(245, 158, 11, 0.2); color: var(--accent); }
-        .icon-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-        .icon-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-change {
-            font-size: 0.875rem;
             font-weight: 600;
+            transition: 0.2s;
         }
+        
+        .tab:hover { background: var(--border); }
+        .tab.active { background: var(--bg); color: var(--accent); border-top: 2px solid var(--accent); }
 
-        .positive { color: var(--success); }
-        .negative { color: var(--danger); }
+        /* Content Area */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            display: none; /* Hidden by default */
+        }
+        .content.active { display: block; }
 
-        /* Content Grid */
-        .content-grid {
+        /* Cards & Grids */
+        .grid-kpi {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
         }
-
-        @media (max-width: 1024px) {
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
+        
         .card {
-            background: var(--bg-card);
+            background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
+            padding: 15px;
+            border-radius: 4px;
         }
+        
+        .card-title { color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+        .card-value { font-size: 24px; font-weight: bold; margin-top: 5px; font-family: var(--font-mono); }
+        .card-sub { font-size: 12px; margin-top: 5px; }
+        
+        .pos { color: var(--success); }
+        .neg { color: var(--danger); }
 
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-        }
-
-        .card-subtitle {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
-
-        /* Table Styles */
-        .table-container {
+        /* Data Tables (Excel Style) */
+        .table-wrapper {
+            background: var(--surface);
+            border: 1px solid var(--border);
             overflow-x: auto;
         }
-
+        
         table {
             width: 100%;
             border-collapse: collapse;
+            white-space: nowrap;
         }
-
-        thead {
-            border-bottom: 2px solid var(--border);
-        }
-
+        
         th {
             text-align: left;
-            padding: 1rem;
+            padding: 8px 12px;
+            background: var(--bg);
             color: var(--text-secondary);
             font-weight: 600;
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        td {
-            padding: 1rem;
+            font-size: 11px;
             border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
         }
-
-        tbody tr {
-            transition: background 0.2s;
+        
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--font-mono);
+            font-size: 12px;
         }
+        
+        tr:hover td { background: rgba(255,255,255,0.05); }
 
-        tbody tr:hover {
-            background: var(--bg-hover);
-        }
-
-        .pool-info {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .pool-icons {
-            display: flex;
-            position: relative;
-            width: 40px;
-            height: 40px;
-        }
-
-        .pool-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            border: 2px solid var(--bg-card);
-            position: absolute;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
-        }
-
-        .pool-icon:first-child {
-            z-index: 2;
-            background: #f7931a;
-        }
-
-        .pool-icon:last-child {
-            right: 0;
-            background: #627eea;
-        }
-
-        .pool-name {
-            font-weight: 600;
-        }
-
-        .pool-pair {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-        }
-
-        .badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            display: inline-block;
-        }
-
-        .badge-success {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--success);
-        }
-
-        .badge-warning {
-            background: rgba(245, 158, 11, 0.2);
-            color: var(--warning);
-        }
-
-        .badge-danger {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--danger);
-        }
-
-        .badge-chain {
-            background: rgba(124, 58, 237, 0.2);
-            color: var(--secondary);
+        /* Inputs */
+        input, select {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px;
+            border-radius: 3px;
+            font-family: var(--font-mono);
         }
 
         .btn {
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
+            background: var(--accent);
+            color: #fff;
             border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.875rem;
         }
+        .btn:hover { opacity: 0.9; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-        }
+        /* Risk Bars */
+        .risk-bar-bg { width: 100px; height: 6px; background: var(--bg); border-radius: 3px; display: inline-block; vertical-align: middle; }
+        .risk-bar-fill { height: 100%; border-radius: 3px; }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 212, 170, 0.3);
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-        }
-
-        .btn-outline:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-        }
-
-        /* Chart Container */
-        .chart-container {
-            position: relative;
-            height: 300px;
-            margin-top: 1rem;
-        }
-
-        /* Filters */
-        .filters {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
-
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-            position: relative;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 0.75rem 1rem 0.75rem 2.5rem;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 0.875rem;
-        }
-
-        .search-box i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
-        }
-
-        .filter-select {
-            padding: 0.75rem 1rem;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            cursor: pointer;
-            font-size: 0.875rem;
-        }
-
-        /* IL Calculator Panel */
-        .il-calculator {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(245, 158, 11, 0.1));
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-
-        .il-input-group {
-            margin-bottom: 1rem;
-        }
-
-        .il-input-group label {
-            display: block;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .il-input-group input {
-            width: 100%;
-            padding: 0.75rem;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-family: 'Courier New', monospace;
-        }
-
-        .il-result {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            background: var(--bg-dark);
-            border-radius: 8px;
-            border-left: 4px solid var(--danger);
-        }
-
-        .il-result-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-        }
-
-        .il-result-item:last-child {
-            margin-bottom: 0;
-            padding-top: 0.5rem;
-            border-top: 1px solid var(--border);
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        /* Analytics Section */
-        .analytics-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .analytics-item {
-            padding: 1rem;
-            background: var(--bg-dark);
-            border-radius: 8px;
-            border: 1px solid var(--border);
-        }
-
-        .analytics-label {
-            color: var(--text-secondary);
-            font-size: 0.75rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .analytics-value {
-            font-size: 1.25rem;
-            font-weight: 700;
-            font-family: 'Courier New', monospace;
-        }
-
-        /* Export Buttons */
-        .export-buttons {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 2rem;
-            max-width: 600px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 0.75rem;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 1rem;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .nav-links {
-                gap: 1rem;
-                font-size: 0.875rem;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .container {
-                padding: 1rem;
-            }
-
-            .analytics-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Loading Animation */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .loading {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        /* Tooltip */
-        .tooltip {
-            position: relative;
-        }
-
-        .tooltip::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 0.5rem 1rem;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 0.75rem;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
-        }
-
-        .tooltip:hover::after {
-            opacity: 1;
-        }
-
-        /* Progress Bar */
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: var(--bg-dark);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 0.5rem;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            border-radius: 4px;
-            transition: width 0.3s;
-        }
-
-        /* Risk Meter */
-        .risk-meter {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-
-        .risk-bar {
-            flex: 1;
-            height: 6px;
-            background: var(--bg-dark);
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .risk-fill {
-            height: 100%;
-            border-radius: 3px;
-            transition: width 0.3s;
-        }
-
-        .risk-low { background: var(--success); }
-        .risk-medium { background: var(--warning); }
-        .risk-high { background: var(--danger); }
+        /* Utility */
+        .flex-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .chart-container { height: 300px; width: 100%; }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">
-                <i class="fas fa-water"></i>
-                <span>LP Manager Pro</span>
-            </div>
-            <nav>
-                <ul class="nav-links">
-                    <li><a href="#dashboard">Dashboard</a></li>
-                    <li><a href="#pools">Pools</a></li>
-                    <li><a href="#analytics">Analytics</a></li>
-                    <li><a href="#rewards">Rewards</a></li>
-                </ul>
-            </nav>
-            <div class="header-controls">
-                <div class="live-indicator">
-                    <div class="pulse-dot"></div>
-                    <span>Live API</span>
-                </div>
-                <select class="chain-selector" id="chainSelector" onchange="filterByChain()">
-                    <option value="all">Todas Chains</option>
-                    <option value="ethereum">Ethereum</option>
-                    <option value="arbitrum">Arbitrum</option>
-                    <option value="base">Base</option>
-                    <option value="solana">Solana</option>
-                    <option value="bsc">BNB Chain</option>
-                    <option value="hyperliquid">Hyperliquid</option>
-                </select>
-                <button class="wallet-connect" onclick="connectWallet()">
-                    <i class="fas fa-wallet"></i> Conectar Wallet
-                </button>
-            </div>
-        </div>
-    </header>
 
-    <!-- Main Content -->
-    <div class="container">
-        <!-- Stats Grid -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Total Value Locked</span>
-                    <div class="stat-icon icon-primary">
-                        <i class="fas fa-lock"></i>
-                    </div>
-                </div>
-                <div class="stat-value" id="tvl">$0</div>
-                <div class="stat-change positive">
-                    <i class="fas fa-arrow-up"></i> <span id="tvlChange">0%</span> (24h)
-                </div>
-            </div>
+<div class="container">
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('dashboard')">1. DASHBOARD</div>
+        <div class="tab" onclick="switchTab('pools')">2. POOLS DATA</div>
+        <div class="tab" onclick="switchTab('risk')">3. RISK MATRIX</div>
+        <div class="tab" onclick="switchTab('il')">4. IL CALCULATOR</div>
+        <div class="tab" onclick="switchTab('backtest')">5. BACKTESTING</div>
+    </div>
 
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Total em Rewards</span>
-                    <div class="stat-icon icon-secondary">
-                        <i class="fas fa-gift"></i>
-                    </div>
-                </div>
-                <div class="stat-value" id="rewards">$0</div>
-                <div class="stat-change positive">
-                    <i class="fas fa-arrow-up"></i> <span id="rewardsChange">0%</span> esta semana
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">APY Médio Ponderado</span>
-                    <div class="stat-icon icon-accent">
-                        <i class="fas fa-percentage"></i>
-                    </div>
-                </div>
-                <div class="stat-value" id="apy">0%</div>
-                <div class="stat-change">
-                    Composto: <span id="compoundedApy" class="positive">0%</span>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Sharpe Ratio</span>
-                    <div class="stat-icon icon-success">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                </div>
-                <div class="stat-value" id="sharpeRatio">0.00</div>
-                <div class="stat-change">
-                    <span style="color: var(--text-secondary)">Risk-adjusted return</span>
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">ROI Acumulado</span>
-                    <div class="stat-icon icon-primary">
-                        <i class="fas fa-wallet"></i>
-                    </div>
-                </div>
-                <div class="stat-value" id="roi">0%</div>
-                <div class="stat-change positive">
-                    <i class="fas fa-arrow-up"></i> <span id="pnlDaily">0%</span> hoje
-                </div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Pools Ativas</span>
-                    <div class="stat-icon icon-success">
-                        <i class="fas fa-chart-pie"></i>
-                    </div>
-                </div>
-                <div class="stat-value" id="poolsCount">0</div>
-                <div class="stat-change">
-                    <span id="activeChains">0 chains</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Content Grid -->
-        <div class="content-grid">
-            <!-- Pools Table -->
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <h2 class="card-title">Suas Pools de Liquidez</h2>
-                        <p class="card-subtitle">Gerencie e monitore suas posições em tempo real</p>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-outline" onclick="exportToCSV()">
-                            <i class="fas fa-file-csv"></i> CSV
-                        </button>
-                        <button class="btn btn-outline" onclick="exportToXLSX()">
-                            <i class="fas fa-file-excel"></i> XLSX
-                        </button>
-                        <button class="btn btn-outline" onclick="exportToPDF()">
-                            <i class="fas fa-file-pdf"></i> PDF
-                        </button>
-                        <button class="btn btn-primary" onclick="openModal()">
-                            <i class="fas fa-plus"></i> Nova Pool
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Filters -->
-                <div class="filters">
-                    <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="searchInput" placeholder="Buscar pool..." onkeyup="filterPools()">
-                    </div>
-                    <select class="filter-select" id="filterStatus" onchange="filterPools()">
-                        <option value="all">Todas</option>
-                        <option value="active">Ativas</option>
-                        <option value="paused">Pausadas</option>
-                    </select>
-                    <select class="filter-select" id="sortBy" onchange="sortPools()">
-                        <option value="tvl">Ordenar por TVL</option>
-                        <option value="apy">Ordenar por APY</option>
-                        <option value="rewards">Ordenar por Rewards</option>
-                        <option value="risk">Ordenar por Risco</option>
-                    </select>
-                </div>
-
-                <!-- Table -->
-                <div class="table-container">
-                    <table id="poolsTable">
-                        <thead>
-                            <tr>
-                                <th>Pool</th>
-                                <th>Chain</th>
-                                <th>TVL</th>
-                                <th>APY</th>
-                                <th>Seu Stake</th>
-                                <th>Rewards</th>
-                                <th>Risco</th>
-                                <th>IL Est.</th>
-                                <th>Status</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="poolsTableBody">
-                            <!-- Dynamic content -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Side Panel -->
+    <!-- TAB 1: DASHBOARD -->
+    <div id="dashboard" class="content active">
+        <div class="flex-row">
+            <h2>Executive Summary</h2>
             <div>
-                <!-- IL Calculator -->
-                <div class="card il-calculator">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title"><i class="fas fa-calculator"></i> Calculadora IL</h2>
-                            <p class="card-subtitle">Impermanent Loss em tempo real</p>
-                        </div>
-                    </div>
-                    <div class="il-input-group">
-                        <label>Preço Entrada Token A ($)</label>
-                        <input type="number" id="ilEntryPrice" value="2000" step="0.01" oninput="calculateIL()">
-                    </div>
-                    <div class="il-input-group">
-                        <label>Preço Atual Token A ($)</label>
-                        <input type="number" id="ilCurrentPrice" value="2200" step="0.01" oninput="calculateIL()">
-                    </div>
-                    <div class="il-input-group">
-                        <label>Valor Investido ($)</label>
-                        <input type="number" id="ilInvestment" value="1000" step="100" oninput="calculateIL()">
-                    </div>
-                    <div class="il-result">
-                        <div class="il-result-item">
-                            <span>HODL Value:</span>
-                            <span id="ilHodlValue">$0</span>
-                        </div>
-                        <div class="il-result-item">
-                            <span>LP Value:</span>
-                            <span id="ilLPValue">$0</span>
-                        </div>
-                        <div class="il-result-item">
-                            <span style="color: var(--danger);">Impermanent Loss:</span>
-                            <span id="ilResult" style="color: var(--danger);">0%</span>
-                        </div>
-                    </div>
-                </div>
+                <button class="btn" onclick="exportData()">Export XLSX</button>
+                <button class="btn btn-outline" onclick="saveState()">Save Local</button>
+                <button class="btn btn-outline" onclick="clearData()">Reset</button>
+            </div>
+        </div>
 
-                <!-- Analytics -->
-                <div class="card" style="margin-top: 1.5rem;">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">Analytics Avançado</h2>
-                            <p class="card-subtitle">Métricas de desempenho</p>
-                        </div>
-                    </div>
-                    <div class="analytics-grid">
-                        <div class="analytics-item">
-                            <div class="analytics-label">PnL Diário</div>
-                            <div class="analytics-value positive" id="pnlDailyValue">+$0</div>
-                        </div>
-                        <div class="analytics-item">
-                            <div class="analytics-label">Volatilidade</div>
-                            <div class="analytics-value" id="volatility">0%</div>
-                        </div>
-                        <div class="analytics-item">
-                            <div class="analytics-label">Max Drawdown</div>
-                            <div class="analytics-value negative" id="maxDrawdown">-0%</div>
-                        </div>
-                        <div class="analytics-item">
-                            <div class="analytics-label">Sortino Ratio</div>
-                            <div class="analytics-value" id="sortinoRatio">0.00</div>
-                        </div>
-                    </div>
-                </div>
+        <div class="grid-kpi">
+            <div class="card">
+                <div class="card-title">Total NAV (Net Asset Value)</div>
+                <div class="card-value" id="kpi-nav">$0.00</div>
+                <div class="card-sub" id="kpi-nav-change">+0.00%</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Realized PnL</div>
+                <div class="card-value pos" id="kpi-pnl">$0.00</div>
+                <div class="card-sub">Cumulative</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Sharpe Ratio (30d)</div>
+                <div class="card-value" id="kpi-sharpe">0.00</div>
+                <div class="card-sub">Risk Free: 2%</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Max Drawdown</div>
+                <div class="card-value neg" id="kpi-drawdown">0.00%</div>
+                <div class="card-sub">Peak to Trough</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Weighted APY</div>
+                <div class="card-value" id="kpi-apy">0.00%</div>
+                <div class="card-sub">Annualized</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Active Pools</div>
+                <div class="card-value" id="kpi-count">0</div>
+                <div class="card-sub">Multi-chain</div>
+            </div>
+        </div>
 
-                <!-- Performance Chart -->
-                <div class="card" style="margin-top: 1.5rem;">
-                    <div class="card-header">
-                        <div>
-                            <h2 class="card-title">Performance</h2>
-                            <p class="card-subtitle">Últimos 30 dias</p>
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="performanceChart"></canvas>
-                    </div>
+        <div class="grid-kpi" style="grid-template-columns: 2fr 1fr;">
+            <div class="card">
+                <div class="card-title">Equity Curve (Daily NAV)</div>
+                <div class="chart-container">
+                    <canvas id="equityChart"></canvas>
                 </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Exposure by Chain</div>
+                <div class="chart-container">
+                    <canvas id="chainChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                <!-- Quick Actions -->
-                <div class="card" style="margin-top: 1.5rem;">
-                    <div class="card-header">
-                        <h2 class="card-title">Ações Rápidas</h2>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                        <button class="btn btn-primary" onclick="claimAllRewards()">
-                            <i class="fas fa-coins"></i> Claim All Rewards
-                        </button>
-                        <button class="btn btn-outline" onclick="rebalancePools()">
-                            <i class="fas fa-exchange-alt"></i> Rebalancear Pools
-                        </button>
-                        <button class="btn btn-outline" onclick="showSnapshot()">
-                            <i class="fas fa-camera"></i> Snapshot Mensal
-                        </button>
-                        <button class="btn btn-outline" onclick="showAnalytics()">
-                            <i class="fas fa-chart-pie"></i> Analytics Detalhado
-                        </button>
+    <!-- TAB 2: POOLS DATA -->
+    <div id="pools" class="content">
+        <div class="flex-row">
+            <h2>Position Management</h2>
+            <button class="btn" onclick="addPoolRow()">+ Add Position</button>
+        </div>
+        <div class="table-wrapper">
+            <table id="poolsTable">
+                <thead>
+                    <tr>
+                        <th>Chain</th>
+                        <th>Protocol</th>
+                        <th>Pair</th>
+                        <th>Entry Price</th>
+                        <th>Current Price</th>
+                        <th>Invested</th>
+                        <th>Current Value</th>
+                        <th>Fees Earned</th>
+                        <th>IL Realized</th>
+                        <th>Net PnL</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="poolsBody">
+                    <!-- Rows injected by JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 3: RISK MATRIX -->
+    <div id="risk" class="content">
+        <h2>Risk Analytics</h2>
+        <div class="grid-kpi">
+            <div class="card">
+                <div class="card-title">Token Concentration (Top 1)</div>
+                <div class="card-value neg" id="risk-concentration">0%</div>
+                <div class="card-sub">Warning > 30%</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Stablecoin Ratio</div>
+                <div class="card-value" id="risk-stable">0%</div>
+                <div class="card-sub">Safety buffer</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Volatility (Annualized)</div>
+                <div class="card-value" id="risk-vol">0%</div>
+                <div class="card-sub">Realized</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">Risk Exposure Map</div>
+            <div class="table-wrapper" style="margin-top: 10px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Token</th>
+                            <th>Total Value</th>
+                            <th>Portfolio %</th>
+                            <th>Risk Level</th>
+                        </tr>
+                    </thead>
+                    <tbody id="riskTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: IL CALCULATOR -->
+    <div id="il" class="content">
+        <div class="grid-kpi">
+            <div class="card">
+                <div class="card-title">Impermanent Loss Simulator</div>
+                <div style="margin-top: 15px;">
+                    <label>Token A Price Entry ($)</label><br>
+                    <input type="number" id="il-entry" value="100" style="width: 100%; margin-bottom: 10px;" oninput="calcIL()"><br>
+                    <label>Token A Price Current ($)</label><br>
+                    <input type="number" id="il-current" value="150" style="width: 100%; margin-bottom: 10px;" oninput="calcIL()"><br>
+                    <label>Investment Value ($)</label><br>
+                    <input type="number" id="il-amount" value="1000" style="width: 100%; margin-bottom: 10px;" oninput="calcIL()">
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Results</div>
+                <div style="margin-top: 15px;">
+                    <div>HODL Value: <span class="pos" id="il-hodl" style="float: right;">$0</span></div>
+                    <div>LP Value: <span class="warning" id="il-lp" style="float: right;">$0</span></div>
+                    <hr style="border-color: var(--border); margin: 10px 0;">
+                    <div style="font-weight: bold;">IL Loss: <span class="neg" id="il-loss" style="float: right;">0%</span></div>
+                    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 10px;">
+                        *Formula: 2*sqrt(P_current/P_entry)/(1+P_current/P_entry) - 1
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal -->
-    <div class="modal" id="addPoolModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Adicionar Nova Pool</h2>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
+    <!-- TAB 5: BACKTESTING -->
+    <div id="backtest" class="content">
+        <h2>Simple Strategy Backtest</h2>
+        <div class="card">
+            <p style="color: var(--text-secondary); margin-bottom: 10px;">Simulate returns based on historical volatility assumptions.</p>
+            <div class="flex-row">
+                <div>
+                    <label>Initial Capital ($)</label>
+                    <input type="number" id="bt-capital" value="10000">
+                </div>
+                <div>
+                    <label>Annual APY (%)</label>
+                    <input type="number" id="bt-apy" value="20">
+                </div>
+                <div>
+                    <label>Days</label>
+                    <input type="number" id="bt-days" value="365">
+                </div>
+                <button class="btn" onclick="runBacktest()">Run Simulation</button>
             </div>
-            <form id="addPoolForm" onsubmit="addPool(event)">
-                <div class="form-group">
-                    <label>Par de Tokens</label>
-                    <input type="text" id="poolPair" placeholder="Ex: ETH/USDT" required>
-                </div>
-                <div class="form-group">
-                    <label>Blockchain</label>
-                    <select id="poolChain" required>
-                        <option value="ethereum">Ethereum</option>
-                        <option value="arbitrum">Arbitrum</option>
-                        <option value="base">Base</option>
-                        <option value="solana">Solana</option>
-                        <option value="bsc">BNB Chain</option>
-                        <option value="hyperliquid">Hyperliquid</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Valor Investido ($)</label>
-                    <input type="number" id="poolStake" placeholder="0.00" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label>APY Esperado (%)</label>
-                    <input type="number" id="poolApy" placeholder="0.00" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Plataforma</label>
-                    <input type="text" id="poolPlatform" placeholder="Ex: Uniswap, PancakeSwap">
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn btn-outline" onclick="closeModal()" style="flex: 1;">Cancelar</button>
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">Adicionar Pool</button>
-                </div>
-            </form>
+            <div class="chart-container" style="margin-top: 20px;">
+                <canvas id="backtestChart"></canvas>
+            </div>
         </div>
     </div>
+</div>
 
-    <script>
-        // ==========================================
-        // DATA & STATE
-        // ==========================================
-        let pools = [];
-        let currentChain = 'all';
-        let performanceChart = null;
-        let autoUpdateInterval = null;
+<script>
+/**
+ * QUANT ENGINE CORE
+ * Classes for Data Management and Mathematical Calculations
+ */
 
-        // ==========================================
-        // API INTEGRATION - DefiLlama
-        // ==========================================
+class DataManager {
+    constructor() {
+        this.pools = JSON.parse(localStorage.getItem('lp_pools')) || [];
+        this.history = JSON.parse(localStorage.getItem('lp_history')) || []; // Time series of NAV
+        this.init();
+    }
+
+    init() {
+        if (this.pools.length === 0) this.loadSampleData();
+        this.renderAll();
+    }
+
+    loadSampleData() {
+        this.pools = [
+            { id: 1, chain: 'Ethereum', protocol: 'Uniswap V3', pair: 'ETH/USDC', entry: 2000, current: 2150, invested: 10000, fees: 120, il: -150 },
+            { id: 2, chain: 'Arbitrum', protocol: 'GMX', pair: 'ARB/ETH', entry: 1.2, current: 1.15, invested: 5000, fees: 80, il: -200 },
+            { id: 3, chain: 'Base', protocol: 'Aerodrome', pair: 'USDC/USDbC', entry: 1, current: 1, invested: 20000, fees: 300, il: 0 }
+        ];
+        this.save();
+    }
+
+    addPool(pool) {
+        pool.id = Date.now();
+        this.pools.push(pool);
+        this.save();
+        this.renderAll();
+    }
+
+    deletePool(id) {
+        this.pools = this.pools.filter(p => p.id !== id);
+        this.save();
+        this.renderAll();
+    }
+
+    updatePool(id, field, value) {
+        const pool = this.pools.find(p => p.id === id);
+        if (pool) {
+            pool[field] = value;
+            this.save();
+            this.renderAll();
+        }
+    }
+
+    save() {
+        localStorage.setItem('lp_pools', JSON.stringify(this.pools));
+        // Simulate adding a daily snapshot
+        this.history.push({ date: new Date().toISOString(), nav: this.calculateNAV() });
+        localStorage.setItem('lp_history', JSON.stringify(this.history));
+    }
+
+    calculateNAV() {
+        return this.pools.reduce((acc, p) => {
+            // Current Value = Invested * (Current Price / Entry Price) + Fees + IL (simplified logic)
+            // Note: Real math is more complex, this is for demo structure
+            const priceRatio = p.current / p.entry;
+            const tokenValue = p.invested * priceRatio; 
+            return acc + tokenValue + p.fees;
+        }, 0);
+    }
+
+    /**
+     * QUANT MATH: Sharpe Ratio
+     * Based on daily log returns from history
+     */
+    calculateSharpe() {
+        if (this.history.length < 30) return 0;
         
-        async function fetchDefiLlamaData() {
-            try {
-                // Fetch TVL from DefiLlama
-                const tvlResponse = await fetch('https://api.llama.fi/charts');
-                const tvlData = await tvlResponse.json();
-                
-                // Fetch pools data
-                const poolsResponse = await fetch('https://yields.llama.fi/pools');
-                const poolsData = await poolsResponse.json();
-                
-                return { tvlData, poolsData };
-            } catch (error) {
-                console.error('Error fetching DefiLlama data:', error);
-                return null;
+        // Get last 30 days
+        const slice = this.history.slice(-30).map(h => h.nav);
+        const returns = [];
+        
+        for (let i = 1; i < slice.length; i++) {
+            // Log Return: ln(P_t / P_t-1)
+            returns.push(Math.log(slice[i] / slice[i-1]));
+        }
+
+        const mean = returns.reduce((a, b) => a + b) / returns.length;
+        const variance = returns.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / returns.length;
+        const stdDev = Math.sqrt(variance);
+
+        // Annualize
+        const annMean = mean * 365;
+        const annStdDev = stdDev * Math.sqrt(365);
+
+        // Sharpe = (Mean - RiskFree) / StdDev
+        const riskFree = 0.02 / 365; // Daily risk free
+        return (mean - riskFree) / stdDev;
+    }
+
+    /**
+     * QUANT MATH: Max Drawdown
+     */
+    calculateMaxDrawdown() {
+        if (this.history.length === 0) return 0;
+        let peak = -Infinity;
+        let maxDD = 0;
+
+        this.history.forEach(h => {
+            if (h.nav > peak) peak = h.nav;
+            const drawdown = (peak - h.nav) / peak;
+            if (drawdown > maxDD) maxDD = drawdown;
+        });
+
+        return maxDD * 100;
+    }
+
+    renderAll() {
+        renderDashboard(this);
+        renderPoolsTable(this);
+        renderRiskMatrix(this);
+    }
+}
+
+const manager = new DataManager();
+
+/**
+ * UI RENDERERS
+ */
+
+function renderDashboard(mgr) {
+    const nav = mgr.calculateNAV();
+    const pnl = nav - mgr.pools.reduce((acc, p) => acc + p.invested, 0);
+    const sharpe = mgr.calculateSharpe();
+    const dd = mgr.calculateMaxDrawdown();
+    const weightedApy = mgr.pools.reduce((acc, p) => acc + (p.fees/p.invested)*100, 0) / mgr.pools.length; // Simplified
+
+    document.getElementById('kpi-nav').textContent = `$${nav.toLocaleString()}`;
+    document.getElementById('kpi-pnl').textContent = `$${pnl.toLocaleString()}`;
+    document.getElementById('kpi-pnl').className = pnl >= 0 ? 'card-value pos' : 'card-value neg';
+    document.getElementById('kpi-sharpe').textContent = sharpe.toFixed(2);
+    document.getElementById('kpi-drawdown').textContent = `-${dd.toFixed(2)}%`;
+    document.getElementById('kpi-apy').textContent = `${weightedApy.toFixed(2)}%`;
+    document.getElementById('kpi-count').textContent = mgr.pools.length;
+
+    updateCharts(mgr);
+}
+
+function renderPoolsTable(mgr) {
+    const tbody = document.getElementById('poolsBody');
+    tbody.innerHTML = '';
+
+    mgr.pools.forEach(p => {
+        const priceRatio = p.current / p.entry;
+        const currentVal = p.invested * priceRatio;
+        const netPnL = (currentVal + p.fees) - p.invested;
+        const pnlClass = netPnL >= 0 ? 'pos' : 'neg';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><span style="color: var(--accent);">${p.chain}</span></td>
+            <td>${p.protocol}</td>
+            <td>${p.pair}</td>
+            <td>$${p.entry}</td>
+            <td><input type="number" value="${p.current}" style="width: 80px;" onchange="manager.updatePool(${p.id}, 'current', this.value)"></td>
+            <td>$${p.invested.toLocaleString()}</td>
+            <td>$${currentVal.toLocaleString()}</td>
+            <td class="pos">$${p.fees}</td>
+            <td class="neg">$${p.il}</td>
+            <td class="${pnlClass}">$${netPnL.toLocaleString()}</td>
+            <td><button class="btn-outline" onclick="manager.deletePool(${p.id})" style="border:none; cursor:pointer;">️</button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function renderRiskMatrix(mgr) {
+    // Calculate Token Concentration
+    const totalVal = mgr.pools.reduce((acc, p) => acc + (p.invested * (p.current/p.entry)), 0);
+    const tokenMap = {};
+
+    mgr.pools.forEach(p => {
+        const val = p.invested * (p.current/p.entry);
+        const tokens = p.pair.split('/');
+        tokens.forEach(t => {
+            if (!tokenMap[t]) tokenMap[t] = 0;
+            tokenMap[t] += val / 2; // Assume 50/50 split
+        });
+    });
+
+    let maxTokenVal = 0;
+    let stableVal = 0;
+    const tbody = document.getElementById('riskTableBody');
+    tbody.innerHTML = '';
+
+    for (const [token, val] of Object.entries(tokenMap)) {
+        const pct = (val / totalVal) * 100;
+        if (val > maxTokenVal) maxTokenVal = val;
+        if (token.includes('USDC') || token.includes('DAI') || token.includes('USDT')) stableVal += val;
+
+        tbody.innerHTML += `
+            <tr>
+                <td>${token}</td>
+                <td>$${val.toLocaleString()}</td>
+                <td>${pct.toFixed(2)}%</td>
+                <td>${pct > 30 ? '<span style="color:var(--danger)">HIGH</span>' : '<span style="color:var(--success)">OK</span>'}</td>
+            </tr>
+        `;
+    }
+
+    document.getElementById('risk-concentration').textContent = ((maxTokenVal / totalVal) * 100).toFixed(2) + '%';
+    document.getElementById('risk-stable').textContent = ((stableVal / totalVal) * 100).toFixed(2) + '%';
+    document.getElementById('risk-vol').textContent = '15.4%'; // Simulated
+}
+
+function addPoolRow() {
+    const chain = prompt("Chain (e.g. Ethereum):", "Ethereum");
+    const protocol = prompt("Protocol:", "Uniswap");
+    const pair = prompt("Pair:", "ETH/USDC");
+    const invested = parseFloat(prompt("Invested ($):", "1000"));
+    const entry = parseFloat(prompt("Entry Price:", "2000"));
+    const current = parseFloat(prompt("Current Price:", "2000"));
+
+    if (chain && pair && !isNaN(invested)) {
+        manager.addPool({
+            chain, protocol, pair, invested, entry, current, fees: 0, il: 0
+        });
+    }
+}
+
+/**
+ * IL CALCULATOR
+ */
+function calcIL() {
+    const entry = parseFloat(document.getElementById('il-entry').value);
+    const current = parseFloat(document.getElementById('il-current').value);
+    const amount = parseFloat(document.getElementById('il-amount').value);
+
+    if (!entry || !current || !amount) return;
+
+    const ratio = current / entry;
+    // IL Formula
+    const ilPct = (2 * Math.sqrt(ratio) / (1 + ratio)) - 1;
+    
+    const hodlVal = amount * ratio; // Simplified: assuming 100% in Token A for comparison
+    // LP Val calculation is complex, but IL % is the delta
+    const ilVal = hodlVal * ilPct;
+    const lpVal = hodlVal + ilVal;
+
+    document.getElementById('il-hodl').textContent = `$${hodlVal.toLocaleString()}`;
+    document.getElementById('il-lp').textContent = `$${lpVal.toLocaleString()}`;
+    document.getElementById('il-loss').textContent = `${(ilPct * 100).toFixed(2)}%`;
+}
+
+/**
+ * BACKTESTING
+ */
+function runBacktest() {
+    const capital = parseFloat(document.getElementById('bt-capital').value);
+    const apy = parseFloat(document.getElementById('bt-apy').value) / 100;
+    const days = parseInt(document.getElementById('bt-days').value);
+    
+    const dailyRate = apy / 365;
+    const data = [];
+    const labels = [];
+    let currentVal = capital;
+
+    for (let i = 0; i <= days; i++) {
+        currentVal = currentVal * (1 + dailyRate);
+        data.push(currentVal);
+        if (i % 30 === 0) labels.push(`Day ${i}`);
+    }
+
+    const ctx = document.getElementById('backtestChart').getContext('2d');
+    if (window.btChart) window.btChart.destroy();
+    
+    window.btChart = new Chart(ctx, {
+        type: 'line',
+         {
+            labels: labels,
+            datasets: [{
+                label: 'Projected NAV',
+                 data,
+                borderColor: '#3fb950',
+                borderWidth: 2,
+                tension: 0.1,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } },
+                y: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } }
             }
         }
+    });
+}
 
-        async function updateFromAPI() {
-            const apiData = await fetchDefiLlamaData();
-            
-            if (apiData) {
-                // Update TVL
-                const latestTVL = apiData.tvlData[apiData.tvlData.length - 1].totalLiquidityUSD;
-                document.getElementById('tvl').textContent = formatCurrency(latestTVL);
-                
-                // Calculate 24h change
-                const previousTVL = apiData.tvlData[apiData.tvlData.length - 2].totalLiquidityUSD;
-                const tvlChange = ((latestTVL - previousTVL) / previousTVL * 100).toFixed(2);
-                document.getElementById('tvlChange').textContent = tvlChange + '%';
-                
-                // Update pools with real data
-                updatePoolsFromAPI(apiData.poolsData.data);
+/**
+ * CHARTS & UTILS
+ */
+let equityChartInstance = null;
+let chainChartInstance = null;
+
+function updateCharts(mgr) {
+    // Equity Chart
+    const ctx1 = document.getElementById('equityChart').getContext('2d');
+    if (equityChartInstance) equityChartInstance.destroy();
+
+    equityChartInstance = new Chart(ctx1, {
+        type: 'line',
+         {
+            labels: mgr.history.map(h => new Date(h.date).toLocaleDateString()),
+            datasets: [{
+                label: 'NAV',
+                 mgr.history.map(h => h.nav),
+                borderColor: '#58a6ff',
+                borderWidth: 2,
+                tension: 0.1,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { display: false },
+                y: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } }
             }
         }
+    });
 
-        function updatePoolsFromAPI(apiPools) {
-            // Filter and map API data to our format
-            const topPools = apiPools.slice(0, 10).map(pool => ({
-                id: pool.pool,
-                pair: pool.symbol,
-                chain: pool.chain,
-                tvl: pool.tvlUsd,
-                apy: pool.apy,
-                stake: 0, // User's stake would come from wallet
-                rewards: 0,
-                status: 'active',
-                platform: pool.project,
-                risk: calculateRiskScore(pool.apy, pool.tvlUsd)
-            }));
-            
-            // Merge with existing pools
-            pools = [...pools, ...topPools].filter((v,i,a)=>a.findIndex(t=>(t.pair===v.pair && t.chain===v.chain))===i);
-            
-            renderPools();
-            updateStats();
+    // Chain Chart (Doughnut)
+    const chainData = {};
+    mgr.pools.forEach(p => {
+        const val = p.invested * (p.current/p.entry);
+        chainData[p.chain] = (chainData[p.chain] || 0) + val;
+    });
+
+    const ctx2 = document.getElementById('chainChart').getContext('2d');
+    if (chainChartInstance) chainChartInstance.destroy();
+
+    chainChartInstance = new Chart(ctx2, {
+        type: 'doughnut',
+         {
+            labels: Object.keys(chainData),
+            datasets: [{
+                 Object.values(chainData),
+                backgroundColor: ['#58a6ff', '#3fb950', '#d29922', '#f85149', '#bc8cff'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'right', labels: { color: '#8b949e' } } }
         }
+    });
+}
 
-        function calculateRiskScore(apy, tvl) {
-            // Simple risk calculation: higher APY + lower TVL = higher risk
-            const risk = Math.min(100, (apy / 2) + (1000000 / tvl));
-            return risk.toFixed(1);
-        }
+function switchTab(tabId) {
+    document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    event.target.classList.add('active');
+}
 
-        // ==========================================
-        // IMPERMANENT LOSS CALCULATOR
-        // ==========================================
-        
-        function calculateIL() {
-            const entryPrice = parseFloat(document.getElementById('ilEntryPrice').value);
-            const currentPrice = parseFloat(document.getElementById('ilCurrentPrice').value);
-            const investment = parseFloat(document.getElementById('ilInvestment').value);
-            
-            if (!entryPrice || !currentPrice || !investment) return;
-            
-            const priceRatio = currentPrice / entryPrice;
-            
-            // IL Formula: 2 * sqrt(priceRatio) / (1 + priceRatio) - 1
-            const ilValue = (2 * Math.sqrt(priceRatio) / (1 + priceRatio)) - 1;
-            const ilPercent = (ilValue * 100).toFixed(2);
-            
-            // Calculate values
-            const hodlValue = investment * priceRatio;
-            const lpValue = investment * (1 + ilValue) * priceRatio;
-            const ilLoss = hodlValue - lpValue;
-            
-            document.getElementById('ilHodlValue').textContent = formatCurrency(hodlValue);
-            document.getElementById('ilLPValue').textContent = formatCurrency(lpValue);
-            document.getElementById('ilResult').textContent = `${ilPercent}% ($${formatCurrency(ilLoss)})`;
-        }
+function saveState() {
+    manager.save();
+    alert('State saved to LocalStorage');
+}
 
-        // ==========================================
-        // ANALYTICS CALCULATIONS
-        // ==========================================
-        
-        function calculateAnalytics() {
-            if (pools.length === 0) return;
-            
-            // Weighted APY
-            const totalTVL = pools.reduce((sum, p) => sum + p.tvl, 0);
-            const weightedApy = pools.reduce((sum, p) => sum + (p.apy * p.tvl), 0) / totalTVL;
-            
-            // Compounded APY (daily compounding)
-            const dailyRate = weightedApy / 100 / 365;
-            const compoundedApy = ((Math.pow(1 + dailyRate, 365) - 1) * 100).toFixed(2);
-            
-            // Sharpe Ratio (simplified)
-            const riskFreeRate = 5; // Assume 5% risk-free rate
-            const volatility = 15; // Assume 15% volatility
-            const sharpeRatio = ((weightedApy - riskFreeRate) / volatility).toFixed(2);
-            
-            // Sortino Ratio (downside deviation)
-            const downsideDeviation = 10;
-            const sortinoRatio = ((weightedApy - riskFreeRate) / downsideDeviation).toFixed(2);
-            
-            // ROI
-            const totalStake = pools.reduce((sum, p) => sum + p.stake, 0);
-            const totalRewards = pools.reduce((sum, p) => sum + p.rewards, 0);
-            const roi = totalStake > 0 ? ((totalRewards / totalStake) * 100).toFixed(2) : 0;
-            
-            // Update DOM
-            document.getElementById('apy').textContent = weightedApy.toFixed(2) + '%';
-            document.getElementById('compoundedApy').textContent = compoundedApy + '%';
-            document.getElementById('sharpeRatio').textContent = sharpeRatio;
-            document.getElementById('sortinoRatio').textContent = sortinoRatio;
-            document.getElementById('roi').textContent = roi + '%';
-            
-            // Volatility and Max Drawdown (simulated)
-            document.getElementById('volatility').textContent = volatility + '%';
-            document.getElementById('maxDrawdown').textContent = '-' + (volatility * 1.5).toFixed(1) + '%';
-        }
+function clearData() {
+    if (confirm('Clear all data?')) {
+        localStorage.clear();
+        location.reload();
+    }
+}
 
-        // ==========================================
-        // RENDERING FUNCTIONS
-        // ==========================================
-        
-        function renderPools() {
-            const tbody = document.getElementById('poolsTableBody');
-            tbody.innerHTML = '';
-            
-            let filteredPools = pools;
-            
-            // Filter by chain
-            if (currentChain !== 'all') {
-                filteredPools = filteredPools.filter(p => p.chain === currentChain);
-            }
-            
-            // Filter by status
-            const statusFilter = document.getElementById('filterStatus').value;
-            if (statusFilter !== 'all') {
-                filteredPools = filteredPools.filter(p => p.status === statusFilter);
-            }
-            
-            // Search
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            if (searchTerm) {
-                filteredPools = filteredPools.filter(p => 
-                    p.pair.toLowerCase().includes(searchTerm) || 
-                    p.platform.toLowerCase().includes(searchTerm)
-                );
-            }
-            
-            // Sort
-            const sortBy = document.getElementById('sortBy').value;
-            filteredPools.sort((a, b) => {
-                if (sortBy === 'risk') return parseFloat(b.risk) - parseFloat(a.risk);
-                return b[sortBy] - a[sortBy];
-            });
-            
-            filteredPools.forEach(pool => {
-                const row = document.createElement('tr');
-                const riskClass = pool.risk > 60 ? 'risk-high' : pool.risk > 30 ? 'risk-medium' : 'risk-low';
-                const riskLabel = pool.risk > 60 ? 'Alto' : pool.risk > 30 ? 'Médio' : 'Baixo';
-                
-                row.innerHTML = `
-                    <td>
-                        <div class="pool-info">
-                            <div class="pool-icons">
-                                <div class="pool-icon">${pool.pair.split('/')[0].substring(0, 3)}</div>
-                                <div class="pool-icon">${pool.pair.split('/')[1].substring(0, 3)}</div>
-                            </div>
-                            <div>
-                                <div class="pool-name">${pool.pair}</div>
-                                <div class="pool-pair">${pool.platform}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="badge badge-chain">${pool.chain}</span></td>
-                    <td class="positive">${formatCurrency(pool.tvl)}</td>
-                    <td class="positive">${pool.apy.toFixed(2)}%</td>
-                    <td>${formatCurrency(pool.stake)}</td>
-                    <td class="positive">${formatCurrency(pool.rewards)}</td>
-                    <td>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span>${riskLabel}</span>
-                            <div class="risk-bar" style="width: 50px;">
-                                <div class="risk-fill ${riskClass}" style="width: ${pool.risk}%"></div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="negative">${pool.il || '-'}%</td>
-                    <td>
-                        <span class="badge ${pool.status === 'active' ? 'badge-success' : 'badge-warning'}">
-                            ${pool.status === 'active' ? 'Ativa' : 'Pausada'}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-primary" onclick="managePool(${pool.id})" style="padding: 0.25rem 0.5rem;">
-                            <i class="fas fa-cog"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-            
-            document.getElementById('poolsCount').textContent = filteredPools.length;
-        }
+function exportData() {
+    const wb = XLSX.utils.book_new();
+    
+    // Pools Sheet
+    const wsPools = XLSX.utils.json_to_sheet(manager.pools);
+    XLSX.utils.book_append_sheet(wb, wsPools, "Pools");
+    
+    // History Sheet
+    const wsHist = XLSX.utils.json_to_sheet(manager.history);
+    XLSX.utils.book_append_sheet(wb, wsHist, "History");
 
-        function updateStats() {
-            const totalTVL = pools.reduce((sum, p) => sum + p.tvl, 0);
-            const totalRewards = pools.reduce((sum, p) => sum + p.rewards, 0);
-            const activePools = pools.filter(p => p.status === 'active').length;
-            const chains = [...new Set(pools.map(p => p.chain))];
-            
-            document.getElementById('tvl').textContent = formatCurrency(totalTVL);
-            document.getElementById('rewards').textContent = formatCurrency(totalRewards);
-            document.getElementById('poolsCount').textContent = activePools;
-            document.getElementById('activeChains').textContent = `${chains.length} chains`;
-            
-            calculateAnalytics();
-        }
+    XLSX.writeFile(wb, "LP_Quant_Report.xlsx");
+}
 
-        // ==========================================
-        // EXPORT FUNCTIONS
-        // ==========================================
-        
-        function exportToCSV() {
-            let csv = 'Pool,Chain,TVL,APY,Stake,Rewards,Risk,Status\n';
-            pools.forEach(p => {
-                csv += `${p.pair},${p.chain},${p.tvl},${p.apy},${p.stake},${p.rewards},${p.risk},${p.status}\n`;
-            });
-            
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `liquidity_pools_${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-        }
+// Initialize
+window.onload = function() {
+    renderAll(); // Render initial state
+    calcIL(); // Init calculator
+};
+</script>
 
-        function exportToXLSX() {
-            const data = pools.map(p => ({
-                'Pool': p.pair,
-                'Chain': p.chain,
-                'TVL': p.tvl,
-                'APY': p.apy,
-                'Stake': p.stake,
-                'Rewards': p.rewards,
-                'Risk': p.risk,
-                'Status': p.status
-            }));
-            
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Pools');
-            XLSX.writeFile(wb, `liquidity_pools_${new Date().toISOString().split('T')[0]}.xlsx`);
-        }
-
-        function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            doc.setFontSize(18);
-            doc.text('Liquidity Pool Manager - Report', 14, 20);
-            
-            doc.setFontSize(11);
-            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
-            
-            const tableData = pools.map(p => [
-                p.pair,
-                p.chain,
-                formatCurrency(p.tvl),
-                p.apy.toFixed(2) + '%',
-                formatCurrency(p.stake),
-                p.risk + '%'
-            ]);
-            
-            doc.autoTable({
-                head: [['Pool', 'Chain', 'TVL', 'APY', 'Stake', 'Risk']],
-                body: tableData,
-                startY: 40,
-            });
-            
-            doc.save(`liquidity_pools_${new Date().toISOString().split('T')[0]}.pdf`);
-        }
-
-        function showSnapshot() {
-            const snapshot = {
-                date: new Date().toISOString(),
-                totalTVL: pools.reduce((sum, p) => sum + p.tvl, 0),
-                totalRewards: pools.reduce((sum, p) => sum + p.rewards, 0),
-                poolsCount: pools.length,
-                pools: pools
-            };
-            
-            const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `snapshot_${new Date().toISOString().split('T')[0]}.json`;
-            a.click();
-        }
-
-        // ==========================================
-        // CHART INITIALIZATION
-        // ==========================================
-        
-        function initChart() {
-            const ctx = document.getElementById('performanceChart').getContext('2d');
-            performanceChart = new Chart(ctx, {
-                type: 'line',
-                 {
-                    labels: ['1', '5', '10', '15', '20', '25', '30'],
-                    datasets: [{
-                        label: 'Valor Total ($)',
-                         [100000, 105000, 108000, 115000, 118000, 122000, 125678],
-                        borderColor: '#00d4aa',
-                        backgroundColor: 'rgba(0, 212, 170, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        x: {
-                            grid: { color: '#2d3561' },
-                            ticks: { color: '#94a3b8' }
-                        },
-                        y: {
-                            grid: { color: '#2d3561' },
-                            ticks: { 
-                                color: '#94a3b8',
-                                callback: function(value) {
-                                    return '$' + value.toLocaleString();
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // ==========================================
-        // UTILITY FUNCTIONS
-        // ==========================================
-        
-        function formatCurrency(value) {
-            if (value >= 1000000) {
-                return '$' + (value / 1000000).toFixed(2) + 'M';
-            } else if (value >= 1000) {
-                return '$' + (value / 1000).toFixed(2) + 'K';
-            }
-            return '$' + value.toFixed(2);
-        }
-
-        function filterPools() {
-            renderPools();
-        }
-
-        function sortPools() {
-            renderPools();
-        }
-
-        function filterByChain() {
-            currentChain = document.getElementById('chainSelector').value;
-            renderPools();
-        }
-
-        // ==========================================
-        // MODAL FUNCTIONS
-        // ==========================================
-        
-        function openModal() {
-            document.getElementById('addPoolModal').classList.add('active');
-        }
-
-        function closeModal() {
-            document.getElementById('addPoolModal').classList.remove('active');
-        }
-
-        function addPool(event) {
-            event.preventDefault();
-            
-            const newPool = {
-                id: Date.now(),
-                pair: document.getElementById('poolPair').value,
-                chain: document.getElementById('poolChain').value,
-                stake: parseFloat(document.getElementById('poolStake').value),
-                apy: parseFloat(document.getElementById('poolApy').value),
-                platform: document.getElementById('poolPlatform').value,
-                tvl: parseFloat(document.getElementById('poolStake').value) * 100,
-                rewards: 0,
-                status: 'active',
-                risk: calculateRiskScore(parseFloat(document.getElementById('poolApy').value), parseFloat(document.getElementById('poolStake').value) * 100)
-            };
-            
-            pools.push(newPool);
-            renderPools();
-            updateStats();
-            closeModal();
-            event.target.reset();
-        }
-
-        // ==========================================
-        // ACTION FUNCTIONS
-        // ==========================================
-        
-        function connectWallet() {
-            alert('Conectando wallet... (Funcionalidade demo)');
-        }
-
-        function managePool(id) {
-            const pool = pools.find(p => p.id === id);
-            alert(`Gerenciando pool: ${pool.pair}\n\nTVL: ${formatCurrency(pool.tvl)}\nAPY: ${pool.apy}%\nRisco: ${pool.risk}%`);
-        }
-
-        function claimAllRewards() {
-            const total = pools.reduce((sum, p) => sum + p.rewards, 0);
-            alert(`Rewards claimadas: ${formatCurrency(total)}`);
-            pools.forEach(p => p.rewards = 0);
-            renderPools();
-            updateStats();
-        }
-
-        function rebalancePools() {
-            alert('Rebalanceamento automático iniciado!');
-        }
-
-        function showAnalytics() {
-            alert('Analytics detalhado em desenvolvimento!');
-        }
-
-        // ==========================================
-        // INITIALIZATION
-        // ==========================================
-        
-        window.onload = function() {
-            initChart();
-            calculateIL();
-            
-            // Add sample data
-            pools = [
-                { id: 1, pair: 'ETH/USDT', chain: 'ethereum', tvl: 450000, apy: 28.5, stake: 5000, rewards: 1250, status: 'active', platform: 'Uniswap', risk: 35 },
-                { id: 2, pair: 'BTC/ETH', chain: 'arbitrum', tvl: 320000, apy: 22.3, stake: 3500, rewards: 890, status: 'active', platform: 'SushiSwap', risk: 28 },
-                { id: 3, pair: 'USDC/DAI', chain: 'base', tvl: 180000, apy: 15.8, stake: 2000, rewards: 450, status: 'active', platform: 'Curve', risk: 15 },
-                { id: 4, pair: 'BNB/BUSD', chain: 'bsc', tvl: 95000, apy: 35.2, stake: 1500, rewards: 620, status: 'active', platform: 'PancakeSwap', risk: 55 },
-                { id: 5, pair: 'SOL/USDC', chain: 'solana', tvl: 75000, apy: 42.1, stake: 1200, rewards: 380, status: 'active', platform: 'Raydium', risk: 65 }
-            ];
-            
-            renderPools();
-            updateStats();
-            
-            // Auto-update every 30 seconds
-            updateFromAPI();
-            autoUpdateInterval = setInterval(updateFromAPI, 30000);
-        };
-
-        // Close modal on outside click
-        window.onclick = function(event) {
-            const modal = document.getElementById('addPoolModal');
-            if (event.target === modal) {
-                closeModal();
-            }
-        }
-
-        // Cleanup on page unload
-        window.onbeforeunload = function() {
-            if (autoUpdateInterval) {
-                clearInterval(autoUpdateInterval);
-            }
-        }
-    </script>
 </body>
 </html>
