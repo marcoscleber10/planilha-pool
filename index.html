@@ -6,6 +6,9 @@
     <title>Liquidity Pool Manager - Dashboard Profissional</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -52,6 +55,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .logo {
@@ -80,6 +85,48 @@
 
         .nav-links a:hover {
             color: var(--primary);
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .chain-selector {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            color: var(--success);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
         }
 
         .wallet-connect {
@@ -153,6 +200,7 @@
         .icon-secondary { background: rgba(124, 58, 237, 0.2); color: var(--secondary); }
         .icon-accent { background: rgba(245, 158, 11, 0.2); color: var(--accent); }
         .icon-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .icon-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
 
         .stat-value {
             font-size: 2rem;
@@ -176,6 +224,12 @@
             margin-bottom: 2rem;
         }
 
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -188,6 +242,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .card-title {
@@ -306,6 +362,11 @@
             color: var(--danger);
         }
 
+        .badge-chain {
+            background: rgba(124, 58, 237, 0.2);
+            color: var(--secondary);
+        }
+
         .btn {
             padding: 0.5rem 1rem;
             border-radius: 8px;
@@ -337,28 +398,20 @@
             color: var(--primary);
         }
 
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
         /* Chart Container */
         .chart-container {
             position: relative;
             height: 300px;
             margin-top: 1rem;
-        }
-
-        /* Progress Bar */
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: var(--bg-dark);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 0.5rem;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            border-radius: 4px;
-            transition: width 0.3s;
         }
 
         /* Filters */
@@ -403,13 +456,161 @@
             font-size: 0.875rem;
         }
 
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
+        /* IL Calculator Panel */
+        .il-calculator {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(245, 158, 11, 0.1));
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
+        .il-input-group {
+            margin-bottom: 1rem;
+        }
+
+        .il-input-group label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .il-input-group input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .il-result {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            border-left: 4px solid var(--danger);
+        }
+
+        .il-result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .il-result-item:last-child {
+            margin-bottom: 0;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        /* Analytics Section */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .analytics-item {
+            padding: 1rem;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .analytics-label {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .analytics-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Export Buttons */
+        .export-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -427,6 +628,10 @@
 
             .container {
                 padding: 1rem;
+            }
+
+            .analytics-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -466,76 +671,48 @@
             opacity: 1;
         }
 
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
+        /* Progress Bar */
+        .progress-bar {
             width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 2rem;
-            max-width: 500px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 0.75rem;
+            height: 8px;
             background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 1rem;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
         }
 
-        .form-actions {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+            transition: width 0.3s;
         }
+
+        /* Risk Meter */
+        .risk-meter {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .risk-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-dark);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .risk-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .risk-low { background: var(--success); }
+        .risk-medium { background: var(--warning); }
+        .risk-high { background: var(--danger); }
     </style>
 </head>
 <body>
@@ -554,9 +731,24 @@
                     <li><a href="#rewards">Rewards</a></li>
                 </ul>
             </nav>
-            <button class="wallet-connect" onclick="connectWallet()">
-                <i class="fas fa-wallet"></i> Conectar Wallet
-            </button>
+            <div class="header-controls">
+                <div class="live-indicator">
+                    <div class="pulse-dot"></div>
+                    <span>Live API</span>
+                </div>
+                <select class="chain-selector" id="chainSelector" onchange="filterByChain()">
+                    <option value="all">Todas Chains</option>
+                    <option value="ethereum">Ethereum</option>
+                    <option value="arbitrum">Arbitrum</option>
+                    <option value="base">Base</option>
+                    <option value="solana">Solana</option>
+                    <option value="bsc">BNB Chain</option>
+                    <option value="hyperliquid">Hyperliquid</option>
+                </select>
+                <button class="wallet-connect" onclick="connectWallet()">
+                    <i class="fas fa-wallet"></i> Conectar Wallet
+                </button>
+            </div>
         </div>
     </header>
 
@@ -571,9 +763,9 @@
                         <i class="fas fa-lock"></i>
                     </div>
                 </div>
-                <div class="stat-value" id="tvl">$1,234,567</div>
+                <div class="stat-value" id="tvl">$0</div>
                 <div class="stat-change positive">
-                    <i class="fas fa-arrow-up"></i> +12.5% este mês
+                    <i class="fas fa-arrow-up"></i> <span id="tvlChange">0%</span> (24h)
                 </div>
             </div>
 
@@ -584,22 +776,48 @@
                         <i class="fas fa-gift"></i>
                     </div>
                 </div>
-                <div class="stat-value" id="rewards">$45,678</div>
+                <div class="stat-value" id="rewards">$0</div>
                 <div class="stat-change positive">
-                    <i class="fas fa-arrow-up"></i> +8.2% esta semana
+                    <i class="fas fa-arrow-up"></i> <span id="rewardsChange">0%</span> esta semana
                 </div>
             </div>
 
             <div class="stat-card">
                 <div class="stat-header">
-                    <span class="stat-title">APY Médio</span>
+                    <span class="stat-title">APY Médio Ponderado</span>
                     <div class="stat-icon icon-accent">
                         <i class="fas fa-percentage"></i>
                     </div>
                 </div>
-                <div class="stat-value" id="apy">24.5%</div>
+                <div class="stat-value" id="apy">0%</div>
+                <div class="stat-change">
+                    Composto: <span id="compoundedApy" class="positive">0%</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Sharpe Ratio</span>
+                    <div class="stat-icon icon-success">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="sharpeRatio">0.00</div>
+                <div class="stat-change">
+                    <span style="color: var(--text-secondary)">Risk-adjusted return</span>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">ROI Acumulado</span>
+                    <div class="stat-icon icon-primary">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="roi">0%</div>
                 <div class="stat-change positive">
-                    <i class="fas fa-arrow-up"></i> +3.1% vs média
+                    <i class="fas fa-arrow-up"></i> <span id="pnlDaily">0%</span> hoje
                 </div>
             </div>
 
@@ -607,12 +825,12 @@
                 <div class="stat-header">
                     <span class="stat-title">Pools Ativas</span>
                     <div class="stat-icon icon-success">
-                        <i class="fas fa-chart-line"></i>
+                        <i class="fas fa-chart-pie"></i>
                     </div>
                 </div>
-                <div class="stat-value" id="pools-count">12</div>
+                <div class="stat-value" id="poolsCount">0</div>
                 <div class="stat-change">
-                    <span style="color: var(--text-secondary)">3 pools em destaque</span>
+                    <span id="activeChains">0 chains</span>
                 </div>
             </div>
         </div>
@@ -624,11 +842,22 @@
                 <div class="card-header">
                     <div>
                         <h2 class="card-title">Suas Pools de Liquidez</h2>
-                        <p class="card-subtitle">Gerencie e monitore suas posições</p>
+                        <p class="card-subtitle">Gerencie e monitore suas posições em tempo real</p>
                     </div>
-                    <button class="btn btn-primary" onclick="openModal()">
-                        <i class="fas fa-plus"></i> Nova Pool
-                    </button>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-outline" onclick="exportToCSV()">
+                            <i class="fas fa-file-csv"></i> CSV
+                        </button>
+                        <button class="btn btn-outline" onclick="exportToXLSX()">
+                            <i class="fas fa-file-excel"></i> XLSX
+                        </button>
+                        <button class="btn btn-outline" onclick="exportToPDF()">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                        <button class="btn btn-primary" onclick="openModal()">
+                            <i class="fas fa-plus"></i> Nova Pool
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Filters -->
@@ -646,6 +875,7 @@
                         <option value="tvl">Ordenar por TVL</option>
                         <option value="apy">Ordenar por APY</option>
                         <option value="rewards">Ordenar por Rewards</option>
+                        <option value="risk">Ordenar por Risco</option>
                     </select>
                 </div>
 
@@ -655,10 +885,13 @@
                         <thead>
                             <tr>
                                 <th>Pool</th>
+                                <th>Chain</th>
                                 <th>TVL</th>
                                 <th>APY</th>
                                 <th>Seu Stake</th>
                                 <th>Rewards</th>
+                                <th>Risco</th>
+                                <th>IL Est.</th>
                                 <th>Status</th>
                                 <th>Ações</th>
                             </tr>
@@ -672,8 +905,72 @@
 
             <!-- Side Panel -->
             <div>
+                <!-- IL Calculator -->
+                <div class="card il-calculator">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title"><i class="fas fa-calculator"></i> Calculadora IL</h2>
+                            <p class="card-subtitle">Impermanent Loss em tempo real</p>
+                        </div>
+                    </div>
+                    <div class="il-input-group">
+                        <label>Preço Entrada Token A ($)</label>
+                        <input type="number" id="ilEntryPrice" value="2000" step="0.01" oninput="calculateIL()">
+                    </div>
+                    <div class="il-input-group">
+                        <label>Preço Atual Token A ($)</label>
+                        <input type="number" id="ilCurrentPrice" value="2200" step="0.01" oninput="calculateIL()">
+                    </div>
+                    <div class="il-input-group">
+                        <label>Valor Investido ($)</label>
+                        <input type="number" id="ilInvestment" value="1000" step="100" oninput="calculateIL()">
+                    </div>
+                    <div class="il-result">
+                        <div class="il-result-item">
+                            <span>HODL Value:</span>
+                            <span id="ilHodlValue">$0</span>
+                        </div>
+                        <div class="il-result-item">
+                            <span>LP Value:</span>
+                            <span id="ilLPValue">$0</span>
+                        </div>
+                        <div class="il-result-item">
+                            <span style="color: var(--danger);">Impermanent Loss:</span>
+                            <span id="ilResult" style="color: var(--danger);">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics -->
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Analytics Avançado</h2>
+                            <p class="card-subtitle">Métricas de desempenho</p>
+                        </div>
+                    </div>
+                    <div class="analytics-grid">
+                        <div class="analytics-item">
+                            <div class="analytics-label">PnL Diário</div>
+                            <div class="analytics-value positive" id="pnlDailyValue">+$0</div>
+                        </div>
+                        <div class="analytics-item">
+                            <div class="analytics-label">Volatilidade</div>
+                            <div class="analytics-value" id="volatility">0%</div>
+                        </div>
+                        <div class="analytics-item">
+                            <div class="analytics-label">Max Drawdown</div>
+                            <div class="analytics-value negative" id="maxDrawdown">-0%</div>
+                        </div>
+                        <div class="analytics-item">
+                            <div class="analytics-label">Sortino Ratio</div>
+                            <div class="analytics-value" id="sortinoRatio">0.00</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Performance Chart -->
-                <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card" style="margin-top: 1.5rem;">
                     <div class="card-header">
                         <div>
                             <h2 class="card-title">Performance</h2>
@@ -686,7 +983,7 @@
                 </div>
 
                 <!-- Quick Actions -->
-                <div class="card">
+                <div class="card" style="margin-top: 1.5rem;">
                     <div class="card-header">
                         <h2 class="card-title">Ações Rápidas</h2>
                     </div>
@@ -697,8 +994,8 @@
                         <button class="btn btn-outline" onclick="rebalancePools()">
                             <i class="fas fa-exchange-alt"></i> Rebalancear Pools
                         </button>
-                        <button class="btn btn-outline" onclick="exportData()">
-                            <i class="fas fa-download"></i> Exportar Dados
+                        <button class="btn btn-outline" onclick="showSnapshot()">
+                            <i class="fas fa-camera"></i> Snapshot Mensal
                         </button>
                         <button class="btn btn-outline" onclick="showAnalytics()">
                             <i class="fas fa-chart-pie"></i> Analytics Detalhado
@@ -719,19 +1016,30 @@
             <form id="addPoolForm" onsubmit="addPool(event)">
                 <div class="form-group">
                     <label>Par de Tokens</label>
-                    <input type="text" placeholder="Ex: ETH/USDT" required>
+                    <input type="text" id="poolPair" placeholder="Ex: ETH/USDT" required>
+                </div>
+                <div class="form-group">
+                    <label>Blockchain</label>
+                    <select id="poolChain" required>
+                        <option value="ethereum">Ethereum</option>
+                        <option value="arbitrum">Arbitrum</option>
+                        <option value="base">Base</option>
+                        <option value="solana">Solana</option>
+                        <option value="bsc">BNB Chain</option>
+                        <option value="hyperliquid">Hyperliquid</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Valor Investido ($)</label>
-                    <input type="number" placeholder="0.00" step="0.01" required>
+                    <input type="number" id="poolStake" placeholder="0.00" step="0.01" required>
                 </div>
                 <div class="form-group">
                     <label>APY Esperado (%)</label>
-                    <input type="number" placeholder="0.00" step="0.01">
+                    <input type="number" id="poolApy" placeholder="0.00" step="0.01">
                 </div>
                 <div class="form-group">
                     <label>Plataforma</label>
-                    <input type="text" placeholder="Ex: Uniswap, PancakeSwap">
+                    <input type="text" id="poolPlatform" placeholder="Ex: Uniswap, PancakeSwap">
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn btn-outline" onclick="closeModal()" style="flex: 1;">Cancelar</button>
@@ -742,27 +1050,343 @@
     </div>
 
     <script>
-        // Sample Data
-        let pools = [
-            { id: 1, name: 'ETH/USDT', tvl: 450000, apy: 28.5, stake: 5000, rewards: 1250, status: 'active', platform: 'Uniswap' },
-            { id: 2, name: 'BTC/ETH', tvl: 320000, apy: 22.3, stake: 3500, rewards: 890, status: 'active', platform: 'SushiSwap' },
-            { id: 3, name: 'USDC/DAI', tvl: 180000, apy: 15.8, stake: 2000, rewards: 450, status: 'active', platform: 'Curve' },
-            { id: 4, name: 'BNB/BUSD', tvl: 95000, apy: 35.2, stake: 1500, rewards: 620, status: 'paused', platform: 'PancakeSwap' },
-            { id: 5, name: 'MATIC/USDC', tvl: 75000, apy: 42.1, stake: 1200, rewards: 380, status: 'active', platform: 'QuickSwap' }
-        ];
+        // ==========================================
+        // DATA & STATE
+        // ==========================================
+        let pools = [];
+        let currentChain = 'all';
+        let performanceChart = null;
+        let autoUpdateInterval = null;
 
-        // Initialize Chart
-        let performanceChart;
+        // ==========================================
+        // API INTEGRATION - DefiLlama
+        // ==========================================
+        
+        async function fetchDefiLlamaData() {
+            try {
+                // Fetch TVL from DefiLlama
+                const tvlResponse = await fetch('https://api.llama.fi/charts');
+                const tvlData = await tvlResponse.json();
+                
+                // Fetch pools data
+                const poolsResponse = await fetch('https://yields.llama.fi/pools');
+                const poolsData = await poolsResponse.json();
+                
+                return { tvlData, poolsData };
+            } catch (error) {
+                console.error('Error fetching DefiLlama data:', error);
+                return null;
+            }
+        }
+
+        async function updateFromAPI() {
+            const apiData = await fetchDefiLlamaData();
+            
+            if (apiData) {
+                // Update TVL
+                const latestTVL = apiData.tvlData[apiData.tvlData.length - 1].totalLiquidityUSD;
+                document.getElementById('tvl').textContent = formatCurrency(latestTVL);
+                
+                // Calculate 24h change
+                const previousTVL = apiData.tvlData[apiData.tvlData.length - 2].totalLiquidityUSD;
+                const tvlChange = ((latestTVL - previousTVL) / previousTVL * 100).toFixed(2);
+                document.getElementById('tvlChange').textContent = tvlChange + '%';
+                
+                // Update pools with real data
+                updatePoolsFromAPI(apiData.poolsData.data);
+            }
+        }
+
+        function updatePoolsFromAPI(apiPools) {
+            // Filter and map API data to our format
+            const topPools = apiPools.slice(0, 10).map(pool => ({
+                id: pool.pool,
+                pair: pool.symbol,
+                chain: pool.chain,
+                tvl: pool.tvlUsd,
+                apy: pool.apy,
+                stake: 0, // User's stake would come from wallet
+                rewards: 0,
+                status: 'active',
+                platform: pool.project,
+                risk: calculateRiskScore(pool.apy, pool.tvlUsd)
+            }));
+            
+            // Merge with existing pools
+            pools = [...pools, ...topPools].filter((v,i,a)=>a.findIndex(t=>(t.pair===v.pair && t.chain===v.chain))===i);
+            
+            renderPools();
+            updateStats();
+        }
+
+        function calculateRiskScore(apy, tvl) {
+            // Simple risk calculation: higher APY + lower TVL = higher risk
+            const risk = Math.min(100, (apy / 2) + (1000000 / tvl));
+            return risk.toFixed(1);
+        }
+
+        // ==========================================
+        // IMPERMANENT LOSS CALCULATOR
+        // ==========================================
+        
+        function calculateIL() {
+            const entryPrice = parseFloat(document.getElementById('ilEntryPrice').value);
+            const currentPrice = parseFloat(document.getElementById('ilCurrentPrice').value);
+            const investment = parseFloat(document.getElementById('ilInvestment').value);
+            
+            if (!entryPrice || !currentPrice || !investment) return;
+            
+            const priceRatio = currentPrice / entryPrice;
+            
+            // IL Formula: 2 * sqrt(priceRatio) / (1 + priceRatio) - 1
+            const ilValue = (2 * Math.sqrt(priceRatio) / (1 + priceRatio)) - 1;
+            const ilPercent = (ilValue * 100).toFixed(2);
+            
+            // Calculate values
+            const hodlValue = investment * priceRatio;
+            const lpValue = investment * (1 + ilValue) * priceRatio;
+            const ilLoss = hodlValue - lpValue;
+            
+            document.getElementById('ilHodlValue').textContent = formatCurrency(hodlValue);
+            document.getElementById('ilLPValue').textContent = formatCurrency(lpValue);
+            document.getElementById('ilResult').textContent = `${ilPercent}% ($${formatCurrency(ilLoss)})`;
+        }
+
+        // ==========================================
+        // ANALYTICS CALCULATIONS
+        // ==========================================
+        
+        function calculateAnalytics() {
+            if (pools.length === 0) return;
+            
+            // Weighted APY
+            const totalTVL = pools.reduce((sum, p) => sum + p.tvl, 0);
+            const weightedApy = pools.reduce((sum, p) => sum + (p.apy * p.tvl), 0) / totalTVL;
+            
+            // Compounded APY (daily compounding)
+            const dailyRate = weightedApy / 100 / 365;
+            const compoundedApy = ((Math.pow(1 + dailyRate, 365) - 1) * 100).toFixed(2);
+            
+            // Sharpe Ratio (simplified)
+            const riskFreeRate = 5; // Assume 5% risk-free rate
+            const volatility = 15; // Assume 15% volatility
+            const sharpeRatio = ((weightedApy - riskFreeRate) / volatility).toFixed(2);
+            
+            // Sortino Ratio (downside deviation)
+            const downsideDeviation = 10;
+            const sortinoRatio = ((weightedApy - riskFreeRate) / downsideDeviation).toFixed(2);
+            
+            // ROI
+            const totalStake = pools.reduce((sum, p) => sum + p.stake, 0);
+            const totalRewards = pools.reduce((sum, p) => sum + p.rewards, 0);
+            const roi = totalStake > 0 ? ((totalRewards / totalStake) * 100).toFixed(2) : 0;
+            
+            // Update DOM
+            document.getElementById('apy').textContent = weightedApy.toFixed(2) + '%';
+            document.getElementById('compoundedApy').textContent = compoundedApy + '%';
+            document.getElementById('sharpeRatio').textContent = sharpeRatio;
+            document.getElementById('sortinoRatio').textContent = sortinoRatio;
+            document.getElementById('roi').textContent = roi + '%';
+            
+            // Volatility and Max Drawdown (simulated)
+            document.getElementById('volatility').textContent = volatility + '%';
+            document.getElementById('maxDrawdown').textContent = '-' + (volatility * 1.5).toFixed(1) + '%';
+        }
+
+        // ==========================================
+        // RENDERING FUNCTIONS
+        // ==========================================
+        
+        function renderPools() {
+            const tbody = document.getElementById('poolsTableBody');
+            tbody.innerHTML = '';
+            
+            let filteredPools = pools;
+            
+            // Filter by chain
+            if (currentChain !== 'all') {
+                filteredPools = filteredPools.filter(p => p.chain === currentChain);
+            }
+            
+            // Filter by status
+            const statusFilter = document.getElementById('filterStatus').value;
+            if (statusFilter !== 'all') {
+                filteredPools = filteredPools.filter(p => p.status === statusFilter);
+            }
+            
+            // Search
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (searchTerm) {
+                filteredPools = filteredPools.filter(p => 
+                    p.pair.toLowerCase().includes(searchTerm) || 
+                    p.platform.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // Sort
+            const sortBy = document.getElementById('sortBy').value;
+            filteredPools.sort((a, b) => {
+                if (sortBy === 'risk') return parseFloat(b.risk) - parseFloat(a.risk);
+                return b[sortBy] - a[sortBy];
+            });
+            
+            filteredPools.forEach(pool => {
+                const row = document.createElement('tr');
+                const riskClass = pool.risk > 60 ? 'risk-high' : pool.risk > 30 ? 'risk-medium' : 'risk-low';
+                const riskLabel = pool.risk > 60 ? 'Alto' : pool.risk > 30 ? 'Médio' : 'Baixo';
+                
+                row.innerHTML = `
+                    <td>
+                        <div class="pool-info">
+                            <div class="pool-icons">
+                                <div class="pool-icon">${pool.pair.split('/')[0].substring(0, 3)}</div>
+                                <div class="pool-icon">${pool.pair.split('/')[1].substring(0, 3)}</div>
+                            </div>
+                            <div>
+                                <div class="pool-name">${pool.pair}</div>
+                                <div class="pool-pair">${pool.platform}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-chain">${pool.chain}</span></td>
+                    <td class="positive">${formatCurrency(pool.tvl)}</td>
+                    <td class="positive">${pool.apy.toFixed(2)}%</td>
+                    <td>${formatCurrency(pool.stake)}</td>
+                    <td class="positive">${formatCurrency(pool.rewards)}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span>${riskLabel}</span>
+                            <div class="risk-bar" style="width: 50px;">
+                                <div class="risk-fill ${riskClass}" style="width: ${pool.risk}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="negative">${pool.il || '-'}%</td>
+                    <td>
+                        <span class="badge ${pool.status === 'active' ? 'badge-success' : 'badge-warning'}">
+                            ${pool.status === 'active' ? 'Ativa' : 'Pausada'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-primary" onclick="managePool(${pool.id})" style="padding: 0.25rem 0.5rem;">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            document.getElementById('poolsCount').textContent = filteredPools.length;
+        }
+
+        function updateStats() {
+            const totalTVL = pools.reduce((sum, p) => sum + p.tvl, 0);
+            const totalRewards = pools.reduce((sum, p) => sum + p.rewards, 0);
+            const activePools = pools.filter(p => p.status === 'active').length;
+            const chains = [...new Set(pools.map(p => p.chain))];
+            
+            document.getElementById('tvl').textContent = formatCurrency(totalTVL);
+            document.getElementById('rewards').textContent = formatCurrency(totalRewards);
+            document.getElementById('poolsCount').textContent = activePools;
+            document.getElementById('activeChains').textContent = `${chains.length} chains`;
+            
+            calculateAnalytics();
+        }
+
+        // ==========================================
+        // EXPORT FUNCTIONS
+        // ==========================================
+        
+        function exportToCSV() {
+            let csv = 'Pool,Chain,TVL,APY,Stake,Rewards,Risk,Status\n';
+            pools.forEach(p => {
+                csv += `${p.pair},${p.chain},${p.tvl},${p.apy},${p.stake},${p.rewards},${p.risk},${p.status}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `liquidity_pools_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        function exportToXLSX() {
+            const data = pools.map(p => ({
+                'Pool': p.pair,
+                'Chain': p.chain,
+                'TVL': p.tvl,
+                'APY': p.apy,
+                'Stake': p.stake,
+                'Rewards': p.rewards,
+                'Risk': p.risk,
+                'Status': p.status
+            }));
+            
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Pools');
+            XLSX.writeFile(wb, `liquidity_pools_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(18);
+            doc.text('Liquidity Pool Manager - Report', 14, 20);
+            
+            doc.setFontSize(11);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
+            
+            const tableData = pools.map(p => [
+                p.pair,
+                p.chain,
+                formatCurrency(p.tvl),
+                p.apy.toFixed(2) + '%',
+                formatCurrency(p.stake),
+                p.risk + '%'
+            ]);
+            
+            doc.autoTable({
+                head: [['Pool', 'Chain', 'TVL', 'APY', 'Stake', 'Risk']],
+                body: tableData,
+                startY: 40,
+            });
+            
+            doc.save(`liquidity_pools_${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+
+        function showSnapshot() {
+            const snapshot = {
+                date: new Date().toISOString(),
+                totalTVL: pools.reduce((sum, p) => sum + p.tvl, 0),
+                totalRewards: pools.reduce((sum, p) => sum + p.rewards, 0),
+                poolsCount: pools.length,
+                pools: pools
+            };
+            
+            const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `snapshot_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        // ==========================================
+        // CHART INITIALIZATION
+        // ==========================================
         
         function initChart() {
             const ctx = document.getElementById('performanceChart').getContext('2d');
             performanceChart = new Chart(ctx, {
                 type: 'line',
-                data: {
+                 {
                     labels: ['1', '5', '10', '15', '20', '25', '30'],
                     datasets: [{
                         label: 'Valor Total ($)',
-                        data: [100000, 105000, 108000, 115000, 118000, 122000, 125678],
+                         [100000, 105000, 108000, 115000, 118000, 122000, 125678],
                         borderColor: '#00d4aa',
                         backgroundColor: 'rgba(0, 212, 170, 0.1)',
                         tension: 0.4,
@@ -794,122 +1418,36 @@
             });
         }
 
-        // Render Pools Table
-        function renderPools() {
-            const tbody = document.getElementById('poolsTableBody');
-            tbody.innerHTML = '';
-
-            pools.forEach(pool => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>
-                        <div class="pool-info">
-                            <div class="pool-icons">
-                                <div class="pool-icon">${pool.name.split('/')[0].substring(0, 3)}</div>
-                                <div class="pool-icon">${pool.name.split('/')[1].substring(0, 3)}</div>
-                            </div>
-                            <div>
-                                <div class="pool-name">${pool.name}</div>
-                                <div class="pool-pair">${pool.platform}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>$${pool.tvl.toLocaleString()}</td>
-                    <td class="positive">${pool.apy}%</td>
-                    <td>$${pool.stake.toLocaleString()}</td>
-                    <td class="positive">$${pool.rewards.toLocaleString()}</td>
-                    <td>
-                        <span class="badge ${pool.status === 'active' ? 'badge-success' : 'badge-warning'}">
-                            ${pool.status === 'active' ? 'Ativa' : 'Pausada'}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-primary" onclick="managePool(${pool.id})">
-                            <i class="fas fa-cog"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-
-            updateStats();
+        // ==========================================
+        // UTILITY FUNCTIONS
+        // ==========================================
+        
+        function formatCurrency(value) {
+            if (value >= 1000000) {
+                return '$' + (value / 1000000).toFixed(2) + 'M';
+            } else if (value >= 1000) {
+                return '$' + (value / 1000).toFixed(2) + 'K';
+            }
+            return '$' + value.toFixed(2);
         }
 
-        // Update Statistics
-        function updateStats() {
-            const totalTVL = pools.reduce((sum, pool) => sum + pool.tvl, 0);
-            const totalRewards = pools.reduce((sum, pool) => sum + pool.rewards, 0);
-            const avgAPY = pools.reduce((sum, pool) => sum + pool.apy, 0) / pools.length;
-            const activePools = pools.filter(p => p.status === 'active').length;
-
-            document.getElementById('tvl').textContent = '$' + totalTVL.toLocaleString();
-            document.getElementById('rewards').textContent = '$' + totalRewards.toLocaleString();
-            document.getElementById('apy').textContent = avgAPY.toFixed(1) + '%';
-            document.getElementById('pools-count').textContent = activePools;
-        }
-
-        // Filter Pools
         function filterPools() {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const status = document.getElementById('filterStatus').value;
-
-            const filtered = pools.filter(pool => {
-                const matchesSearch = pool.name.toLowerCase().includes(search) || 
-                                    pool.platform.toLowerCase().includes(search);
-                const matchesStatus = status === 'all' || pool.status === status;
-                return matchesSearch && matchesStatus;
-            });
-
-            renderFilteredTable(filtered);
+            renderPools();
         }
 
-        // Sort Pools
         function sortPools() {
-            const sortBy = document.getElementById('sortBy').value;
-            const sorted = [...pools].sort((a, b) => b[sortBy] - a[sortBy]);
-            renderFilteredTable(sorted);
+            renderPools();
         }
 
-        // Render Filtered Table
-        function renderFilteredTable(data) {
-            const tbody = document.getElementById('poolsTableBody');
-            tbody.innerHTML = '';
-
-            data.forEach(pool => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>
-                        <div class="pool-info">
-                            <div class="pool-icons">
-                                <div class="pool-icon">${pool.name.split('/')[0].substring(0, 3)}</div>
-                                <div class="pool-icon">${pool.name.split('/')[1].substring(0, 3)}</div>
-                            </div>
-                            <div>
-                                <div class="pool-name">${pool.name}</div>
-                                <div class="pool-pair">${pool.platform}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>$${pool.tvl.toLocaleString()}</td>
-                    <td class="positive">${pool.apy}%</td>
-                    <td>$${pool.stake.toLocaleString()}</td>
-                    <td class="positive">$${pool.rewards.toLocaleString()}</td>
-                    <td>
-                        <span class="badge ${pool.status === 'active' ? 'badge-success' : 'badge-warning'}">
-                            ${pool.status === 'active' ? 'Ativa' : 'Pausada'}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-primary" onclick="managePool(${pool.id})">
-                            <i class="fas fa-cog"></i>
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
+        function filterByChain() {
+            currentChain = document.getElementById('chainSelector').value;
+            renderPools();
         }
 
-        // Modal Functions
+        // ==========================================
+        // MODAL FUNCTIONS
+        // ==========================================
+        
         function openModal() {
             document.getElementById('addPoolModal').classList.add('active');
         }
@@ -918,66 +1456,81 @@
             document.getElementById('addPoolModal').classList.remove('active');
         }
 
-        // Add Pool
         function addPool(event) {
             event.preventDefault();
-            const form = event.target;
+            
             const newPool = {
-                id: pools.length + 1,
-                name: form.querySelector('input[type="text"]').value,
-                tvl: parseFloat(form.querySelectorAll('input[type="number"]')[0].value) * 100,
-                apy: parseFloat(form.querySelectorAll('input[type="number"]')[1].value),
-                stake: parseFloat(form.querySelectorAll('input[type="number"]')[0].value),
+                id: Date.now(),
+                pair: document.getElementById('poolPair').value,
+                chain: document.getElementById('poolChain').value,
+                stake: parseFloat(document.getElementById('poolStake').value),
+                apy: parseFloat(document.getElementById('poolApy').value),
+                platform: document.getElementById('poolPlatform').value,
+                tvl: parseFloat(document.getElementById('poolStake').value) * 100,
                 rewards: 0,
                 status: 'active',
-                platform: form.querySelectorAll('input[type="text"]')[1].value
+                risk: calculateRiskScore(parseFloat(document.getElementById('poolApy').value), parseFloat(document.getElementById('poolStake').value) * 100)
             };
             
             pools.push(newPool);
             renderPools();
+            updateStats();
             closeModal();
-            form.reset();
+            event.target.reset();
         }
 
-        // Action Functions
+        // ==========================================
+        // ACTION FUNCTIONS
+        // ==========================================
+        
         function connectWallet() {
             alert('Conectando wallet... (Funcionalidade demo)');
         }
 
         function managePool(id) {
             const pool = pools.find(p => p.id === id);
-            alert(`Gerenciando pool: ${pool.name}\n\nTVL: $${pool.tvl.toLocaleString()}\nAPY: ${pool.apy}%`);
+            alert(`Gerenciando pool: ${pool.pair}\n\nTVL: ${formatCurrency(pool.tvl)}\nAPY: ${pool.apy}%\nRisco: ${pool.risk}%`);
         }
 
         function claimAllRewards() {
             const total = pools.reduce((sum, p) => sum + p.rewards, 0);
-            alert(`Rewards claimadas: $${total.toLocaleString()}`);
+            alert(`Rewards claimadas: ${formatCurrency(total)}`);
             pools.forEach(p => p.rewards = 0);
             renderPools();
+            updateStats();
         }
 
         function rebalancePools() {
             alert('Rebalanceamento automático iniciado!');
         }
 
-        function exportData() {
-            const data = JSON.stringify(pools, null, 2);
-            const blob = new Blob([data], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'liquidity-pools.json';
-            a.click();
-        }
-
         function showAnalytics() {
             alert('Analytics detalhado em desenvolvimento!');
         }
 
-        // Initialize
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+        
         window.onload = function() {
             initChart();
+            calculateIL();
+            
+            // Add sample data
+            pools = [
+                { id: 1, pair: 'ETH/USDT', chain: 'ethereum', tvl: 450000, apy: 28.5, stake: 5000, rewards: 1250, status: 'active', platform: 'Uniswap', risk: 35 },
+                { id: 2, pair: 'BTC/ETH', chain: 'arbitrum', tvl: 320000, apy: 22.3, stake: 3500, rewards: 890, status: 'active', platform: 'SushiSwap', risk: 28 },
+                { id: 3, pair: 'USDC/DAI', chain: 'base', tvl: 180000, apy: 15.8, stake: 2000, rewards: 450, status: 'active', platform: 'Curve', risk: 15 },
+                { id: 4, pair: 'BNB/BUSD', chain: 'bsc', tvl: 95000, apy: 35.2, stake: 1500, rewards: 620, status: 'active', platform: 'PancakeSwap', risk: 55 },
+                { id: 5, pair: 'SOL/USDC', chain: 'solana', tvl: 75000, apy: 42.1, stake: 1200, rewards: 380, status: 'active', platform: 'Raydium', risk: 65 }
+            ];
+            
             renderPools();
+            updateStats();
+            
+            // Auto-update every 30 seconds
+            updateFromAPI();
+            autoUpdateInterval = setInterval(updateFromAPI, 30000);
         };
 
         // Close modal on outside click
@@ -985,6 +1538,13 @@
             const modal = document.getElementById('addPoolModal');
             if (event.target === modal) {
                 closeModal();
+            }
+        }
+
+        // Cleanup on page unload
+        window.onbeforeunload = function() {
+            if (autoUpdateInterval) {
+                clearInterval(autoUpdateInterval);
             }
         }
     </script>
