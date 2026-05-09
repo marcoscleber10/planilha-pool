@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquidity Pool Manager - Dashboard Profissional</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #00d4aa;
+            --secondary: #7c3aed;
+            --accent: #f59e0b;
+            --bg-dark: #0a0e27;
+            --bg-card: #151a35;
+            --bg-hover: #1e2542;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --border: #2d3561;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-dark) 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .wallet-connect {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .wallet-connect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 212, 170, 0.3);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-title {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .icon-primary { background: rgba(0, 212, 170, 0.2); color: var(--primary); }
+        .icon-secondary { background: rgba(124, 58, 237, 0.2); color: var(--secondary); }
+        .icon-accent { background: rgba(245, 158, 11, 0.2); color: var(--accent); }
+        .icon-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .positive { color: var(--success); }
+        .negative { color: var(--danger); }
+
+        /* Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .card-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            border-bottom: 2px solid var(--border);
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .pool-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .pool-icons {
+            display: flex;
+            position: relative;
+            width: 40px;
+            height: 40px;
+        }
+
+        .pool-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid var(--bg-card);
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .pool-icon:first-child {
+            z-index: 2;
+            background: #f7931a;
+        }
+
+        .pool-icon:last-child {
+            right: 0;
+            background: #627eea;
+        }
+
+        .pool-name {
+            font-weight: 600;
+        }
+
+        .pool-pair {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 212, 170, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-dark);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .filter-select {
+            padding: 0.75rem 1rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+                font-size: 0.875rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+        }
+
+        /* Loading Animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.5rem 1rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-water"></i>
+                <span>LP Manager Pro</span>
+            </div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#pools">Pools</a></li>
+                    <li><a href="#analytics">Analytics</a></li>
+                    <li><a href="#rewards">Rewards</a></li>
+                </ul>
+            </nav>
+            <button class="wallet-connect" onclick="connectWallet()">
+                <i class="fas fa-wallet"></i> Conectar Wallet
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Total Value Locked</span>
+                    <div class="stat-icon icon-primary">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="tvl">$1,234,567</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i> +12.5% este mês
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Total em Rewards</span>
+                    <div class="stat-icon icon-secondary">
+                        <i class="fas fa-gift"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="rewards">$45,678</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i> +8.2% esta semana
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">APY Médio</span>
+                    <div class="stat-icon icon-accent">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="apy">24.5%</div>
+                <div class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i> +3.1% vs média
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <span class="stat-title">Pools Ativas</span>
+                    <div class="stat-icon icon-success">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                </div>
+                <div class="stat-value" id="pools-count">12</div>
+                <div class="stat-change">
+                    <span style="color: var(--text-secondary)">3 pools em destaque</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Grid -->
+        <div class="content-grid">
+            <!-- Pools Table -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Suas Pools de Liquidez</h2>
+                        <p class="card-subtitle">Gerencie e monitore suas posições</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openModal()">
+                        <i class="fas fa-plus"></i> Nova Pool
+                    </button>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Buscar pool..." onkeyup="filterPools()">
+                    </div>
+                    <select class="filter-select" id="filterStatus" onchange="filterPools()">
+                        <option value="all">Todas</option>
+                        <option value="active">Ativas</option>
+                        <option value="paused">Pausadas</option>
+                    </select>
+                    <select class="filter-select" id="sortBy" onchange="sortPools()">
+                        <option value="tvl">Ordenar por TVL</option>
+                        <option value="apy">Ordenar por APY</option>
+                        <option value="rewards">Ordenar por Rewards</option>
+                    </select>
+                </div>
+
+                <!-- Table -->
+                <div class="table-container">
+                    <table id="poolsTable">
+                        <thead>
+                            <tr>
+                                <th>Pool</th>
+                                <th>TVL</th>
+                                <th>APY</th>
+                                <th>Seu Stake</th>
+                                <th>Rewards</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="poolsTableBody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Side Panel -->
+            <div>
+                <!-- Performance Chart -->
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div class="card-header">
+                        <div>
+                            <h2 class="card-title">Performance</h2>
+                            <p class="card-subtitle">Últimos 30 dias</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Ações Rápidas</h2>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <button class="btn btn-primary" onclick="claimAllRewards()">
+                            <i class="fas fa-coins"></i> Claim All Rewards
+                        </button>
+                        <button class="btn btn-outline" onclick="rebalancePools()">
+                            <i class="fas fa-exchange-alt"></i> Rebalancear Pools
+                        </button>
+                        <button class="btn btn-outline" onclick="exportData()">
+                            <i class="fas fa-download"></i> Exportar Dados
+                        </button>
+                        <button class="btn btn-outline" onclick="showAnalytics()">
+                            <i class="fas fa-chart-pie"></i> Analytics Detalhado
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="addPoolModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Adicionar Nova Pool</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="addPoolForm" onsubmit="addPool(event)">
+                <div class="form-group">
+                    <label>Par de Tokens</label>
+                    <input type="text" placeholder="Ex: ETH/USDT" required>
+                </div>
+                <div class="form-group">
+                    <label>Valor Investido ($)</label>
+                    <input type="number" placeholder="0.00" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>APY Esperado (%)</label>
+                    <input type="number" placeholder="0.00" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Plataforma</label>
+                    <input type="text" placeholder="Ex: Uniswap, PancakeSwap">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()" style="flex: 1;">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Adicionar Pool</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Sample Data
+        let pools = [
+            { id: 1, name: 'ETH/USDT', tvl: 450000, apy: 28.5, stake: 5000, rewards: 1250, status: 'active', platform: 'Uniswap' },
+            { id: 2, name: 'BTC/ETH', tvl: 320000, apy: 22.3, stake: 3500, rewards: 890, status: 'active', platform: 'SushiSwap' },
+            { id: 3, name: 'USDC/DAI', tvl: 180000, apy: 15.8, stake: 2000, rewards: 450, status: 'active', platform: 'Curve' },
+            { id: 4, name: 'BNB/BUSD', tvl: 95000, apy: 35.2, stake: 1500, rewards: 620, status: 'paused', platform: 'PancakeSwap' },
+            { id: 5, name: 'MATIC/USDC', tvl: 75000, apy: 42.1, stake: 1200, rewards: 380, status: 'active', platform: 'QuickSwap' }
+        ];
+
+        // Initialize Chart
+        let performanceChart;
+        
+        function initChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1', '5', '10', '15', '20', '25', '30'],
+                    datasets: [{
+                        label: 'Valor Total ($)',
+                        data: [100000, 105000, 108000, 115000, 118000, 122000, 125678],
+                        borderColor: '#00d4aa',
+                        backgroundColor: 'rgba(0, 212, 170, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#2d3561' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: {
+                            grid: { color: '#2d3561' },
+                            ticks: { 
+                                color: '#94a3b8',
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Render Pools Table
+        function renderPools() {
+            const tbody = document.getElementById('poolsTableBody');
+            tbody.innerHTML = '';
+
+            pools.forEach(pool => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div class="pool-info">
+                            <div class="pool-icons">
+                                <div class="pool-icon">${pool.name.split('/')[0].substring(0, 3)}</div>
+                                <div class="pool-icon">${pool.name.split('/')[1].substring(0, 3)}</div>
+                            </div>
+                            <div>
+                                <div class="pool-name">${pool.name}</div>
+                                <div class="pool-pair">${pool.platform}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>$${pool.tvl.toLocaleString()}</td>
+                    <td class="positive">${pool.apy}%</td>
+                    <td>$${pool.stake.toLocaleString()}</td>
+                    <td class="positive">$${pool.rewards.toLocaleString()}</td>
+                    <td>
+                        <span class="badge ${pool.status === 'active' ? 'badge-success' : 'badge-warning'}">
+                            ${pool.status === 'active' ? 'Ativa' : 'Pausada'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-primary" onclick="managePool(${pool.id})">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            updateStats();
+        }
+
+        // Update Statistics
+        function updateStats() {
+            const totalTVL = pools.reduce((sum, pool) => sum + pool.tvl, 0);
+            const totalRewards = pools.reduce((sum, pool) => sum + pool.rewards, 0);
+            const avgAPY = pools.reduce((sum, pool) => sum + pool.apy, 0) / pools.length;
+            const activePools = pools.filter(p => p.status === 'active').length;
+
+            document.getElementById('tvl').textContent = '$' + totalTVL.toLocaleString();
+            document.getElementById('rewards').textContent = '$' + totalRewards.toLocaleString();
+            document.getElementById('apy').textContent = avgAPY.toFixed(1) + '%';
+            document.getElementById('pools-count').textContent = activePools;
+        }
+
+        // Filter Pools
+        function filterPools() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('filterStatus').value;
+
+            const filtered = pools.filter(pool => {
+                const matchesSearch = pool.name.toLowerCase().includes(search) || 
+                                    pool.platform.toLowerCase().includes(search);
+                const matchesStatus = status === 'all' || pool.status === status;
+                return matchesSearch && matchesStatus;
+            });
+
+            renderFilteredTable(filtered);
+        }
+
+        // Sort Pools
+        function sortPools() {
+            const sortBy = document.getElementById('sortBy').value;
+            const sorted = [...pools].sort((a, b) => b[sortBy] - a[sortBy]);
+            renderFilteredTable(sorted);
+        }
+
+        // Render Filtered Table
+        function renderFilteredTable(data) {
+            const tbody = document.getElementById('poolsTableBody');
+            tbody.innerHTML = '';
+
+            data.forEach(pool => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div class="pool-info">
+                            <div class="pool-icons">
+                                <div class="pool-icon">${pool.name.split('/')[0].substring(0, 3)}</div>
+                                <div class="pool-icon">${pool.name.split('/')[1].substring(0, 3)}</div>
+                            </div>
+                            <div>
+                                <div class="pool-name">${pool.name}</div>
+                                <div class="pool-pair">${pool.platform}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>$${pool.tvl.toLocaleString()}</td>
+                    <td class="positive">${pool.apy}%</td>
+                    <td>$${pool.stake.toLocaleString()}</td>
+                    <td class="positive">$${pool.rewards.toLocaleString()}</td>
+                    <td>
+                        <span class="badge ${pool.status === 'active' ? 'badge-success' : 'badge-warning'}">
+                            ${pool.status === 'active' ? 'Ativa' : 'Pausada'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-primary" onclick="managePool(${pool.id})">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Modal Functions
+        function openModal() {
+            document.getElementById('addPoolModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('addPoolModal').classList.remove('active');
+        }
+
+        // Add Pool
+        function addPool(event) {
+            event.preventDefault();
+            const form = event.target;
+            const newPool = {
+                id: pools.length + 1,
+                name: form.querySelector('input[type="text"]').value,
+                tvl: parseFloat(form.querySelectorAll('input[type="number"]')[0].value) * 100,
+                apy: parseFloat(form.querySelectorAll('input[type="number"]')[1].value),
+                stake: parseFloat(form.querySelectorAll('input[type="number"]')[0].value),
+                rewards: 0,
+                status: 'active',
+                platform: form.querySelectorAll('input[type="text"]')[1].value
+            };
+            
+            pools.push(newPool);
+            renderPools();
+            closeModal();
+            form.reset();
+        }
+
+        // Action Functions
+        function connectWallet() {
+            alert('Conectando wallet... (Funcionalidade demo)');
+        }
+
+        function managePool(id) {
+            const pool = pools.find(p => p.id === id);
+            alert(`Gerenciando pool: ${pool.name}\n\nTVL: $${pool.tvl.toLocaleString()}\nAPY: ${pool.apy}%`);
+        }
+
+        function claimAllRewards() {
+            const total = pools.reduce((sum, p) => sum + p.rewards, 0);
+            alert(`Rewards claimadas: $${total.toLocaleString()}`);
+            pools.forEach(p => p.rewards = 0);
+            renderPools();
+        }
+
+        function rebalancePools() {
+            alert('Rebalanceamento automático iniciado!');
+        }
+
+        function exportData() {
+            const data = JSON.stringify(pools, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'liquidity-pools.json';
+            a.click();
+        }
+
+        function showAnalytics() {
+            alert('Analytics detalhado em desenvolvimento!');
+        }
+
+        // Initialize
+        window.onload = function() {
+            initChart();
+            renderPools();
+        };
+
+        // Close modal on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('addPoolModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
