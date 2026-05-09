@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liquidity Pool Manager - Auto Import</title>
+    <title>LP Manager Institutional - Hedge Fund Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * {
@@ -12,512 +13,1000 @@
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f0f0;
-            font-size: 11px;
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #151a35;
+            --bg-tertiary: #1e2542;
+            --border: #2d3561;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --accent: #00d4aa;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --purple: #8b5cf6;
+            --blue: #3b82f6;
         }
 
-        /* Toolbar estilo Excel */
-        .toolbar {
-            background: #217346;
-            color: white;
-            padding: 8px 15px;
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 12px;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* Header Institucional */
+        .header {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            border-bottom: 2px solid var(--accent);
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 3px solid #1a5c37;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
 
-        .toolbar-title {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .toolbar-buttons {
+        .header-left {
             display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), var(--blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
             gap: 10px;
         }
 
-        .btn-excel {
-            background: white;
-            color: #217346;
-            border: none;
-            padding: 6px 15px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-weight: 600;
+        .status-bar {
+            display: flex;
+            gap: 15px;
+            align-items: center;
             font-size: 11px;
         }
 
-        .btn-excel:hover {
-            background: #f0f0f0;
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            border: 1px solid var(--border);
         }
 
-        /* Tabs estilo Excel */
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Tabs */
+        .tabs-container {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 20px;
+        }
+
         .tabs {
-            background: #f0f0f0;
-            border-bottom: 1px solid #d4d4d4;
             display: flex;
-            padding-left: 10px;
+            gap: 2px;
         }
 
         .tab {
-            padding: 8px 20px;
-            background: #e6e6e6;
-            border: 1px solid #d4d4d4;
-            border-bottom: none;
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
             cursor: pointer;
-            margin-right: 2px;
-            border-radius: 3px 3px 0 0;
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 12px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
         }
 
         .tab.active {
-            background: white;
-            border-bottom: 1px solid white;
-            margin-bottom: -1px;
-            color: #217346;
-            font-weight: 600;
+            color: var(--accent);
+            border-bottom-color: var(--accent);
         }
 
-        .tab:hover:not(.active) {
-            background: #f8f8f8;
+        .tab .badge {
+            background: var(--accent);
+            color: var(--bg-primary);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            margin-left: 6px;
+            font-weight: 700;
         }
 
-        /* Container principal */
-        .main-container {
-            padding: 15px;
+        /* Container */
+        .container {
+            max-width: 1920px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Grid Layout */
+        .grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+        @media (max-width: 1200px) {
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
         }
 
         /* Cards */
         .card {
-            background: white;
-            border: 1px solid #d4d4d4;
-            border-radius: 4px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-tertiary);
         }
 
         .card-title {
-            color: #217346;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e8f5e9;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        /* Formulários */
-        .form-group {
-            margin-bottom: 15px;
+        .card-body {
+            padding: 20px;
         }
 
-        .form-label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: #333;
+        /* KPI Cards */
+        .kpi-card {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .form-input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--blue));
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 8px;
+        }
+
+        .kpi-change {
             font-size: 12px;
-            font-family: inherit;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        .form-input:focus {
-            outline: none;
-            border-color: #217346;
-            box-shadow: 0 0 0 2px rgba(33, 115, 70, 0.1);
-        }
+        .positive { color: var(--success); }
+        .negative { color: var(--danger); }
+        .neutral { color: var(--text-secondary); }
 
-        .form-hint {
-            font-size: 10px;
-            color: #666;
-            margin-top: 4px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        /* Botões */
+        /* Buttons */
         .btn {
-            padding: 8px 20px;
+            padding: 8px 16px;
             border: none;
-            border-radius: 3px;
-            cursor: pointer;
+            border-radius: 6px;
             font-weight: 600;
             font-size: 12px;
+            cursor: pointer;
             transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .btn-primary {
-            background: #217346;
+            background: linear-gradient(135deg, var(--accent), var(--blue));
             color: white;
         }
 
         .btn-primary:hover {
-            background: #1a5c37;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 212, 170, 0.3);
         }
 
         .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-            border: 1px solid #ccc;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
         }
 
         .btn-secondary:hover {
-            background: #e0e0e0;
+            background: var(--border);
         }
 
-        .btn-success {
-            background: #10b981;
+        .btn-danger {
+            background: var(--danger);
             color: white;
         }
 
-        .btn-success:hover {
-            background: #059669;
+        /* Forms */
+        .form-group {
+            margin-bottom: 16px;
         }
 
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .form-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            font-family: 'Courier New', monospace;
+        }
+
+        .data-table tr:hover td {
+            background: var(--bg-tertiary);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-chain { background: rgba(124, 58, 237, 0.2); color: #8b5cf6; }
+        .badge-success { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .badge-danger { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+        /* Charts */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Heatmap */
+        .heatmap {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+        }
+
+        .heatmap-cell {
+            padding: 12px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 11px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.05);
+        }
+
+        .heatmap-label {
+            font-size: 10px;
+            opacity: 0.8;
+            margin-bottom: 4px;
+        }
+
+        .heatmap-value {
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
         }
 
         /* Loading */
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 14, 39, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(4px);
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
             border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* Preview de dados */
-        .preview-box {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            padding: 15px;
-            margin-top: 15px;
+        /* Tabs Content */
+        .tab-content {
             display: none;
         }
 
-        .preview-box.show {
+        .tab-content.active {
             display: block;
+            animation: fadeIn 0.3s ease;
         }
 
-        .preview-title {
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #217346;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .preview-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .preview-item {
-            background: white;
-            padding: 10px;
-            border-radius: 3px;
-            border: 1px solid #dee2e6;
-        }
-
-        .preview-label {
-            font-size: 10px;
-            color: #666;
-            margin-bottom: 4px;
-        }
-
-        .preview-value {
-            font-weight: 600;
-            color: #333;
-            font-size: 13px;
-        }
-
-        /* Tabela de preview */
-        .preview-table {
+        /* Progress Bars */
+        .progress-bar {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
         }
 
-        .preview-table th,
-        .preview-table td {
-            border: 1px solid #dee2e6;
-            padding: 8px;
-            text-align: left;
-            font-size: 11px;
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
         }
 
-        .preview-table th {
-            background: #e9ecef;
-            font-weight: 600;
-        }
+        .progress-success { background: linear-gradient(90deg, var(--success), var(--accent)); }
+        .progress-warning { background: linear-gradient(90deg, var(--warning), #fbbf24); }
+        .progress-danger { background: linear-gradient(90deg, var(--danger), #f87171); }
 
-        .preview-table tr:nth-child(even) {
-            background: #f8f9fa;
-        }
-
-        /* Alertas */
+        /* Alert */
         .alert {
-            padding: 12px 15px;
-            border-radius: 4px;
-            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
             font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .alert-info {
-            background: #e3f2fd;
-            border: 1px solid #90caf9;
-            color: #1976d2;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #60a5fa;
         }
 
         .alert-success {
-            background: #e8f5e9;
-            border: 1px solid #a5d6a7;
-            color: #2e7d32;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
         }
 
-        .alert-error {
-            background: #ffebee;
-            border: 1px solid #ef9a9a;
-            color: #c62828;
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
         }
 
-        /* Badges */
-        .badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 3px;
+        /* API Key Input */
+        .api-config {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .api-config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .api-config-title {
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 6px 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
             font-size: 10px;
-            font-weight: 600;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 100;
         }
 
-        .badge-success {
-            background: #d4edda;
-            color: #155724;
+        .tooltip:hover::after {
+            opacity: 1;
         }
 
-        .badge-warning {
-            background: #fff3cd;
-            color: #856404;
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
 
-        /* Spinner */
-        .spinner-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
         }
 
-        .spinner-overlay.show {
-            display: flex;
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
         }
 
-        .spinner-content {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .spinner-text {
-            margin-top: 15px;
-            color: #333;
-            font-weight: 600;
-        }
-
-        /* Checkbox custom */
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-
-        .checkbox-group label {
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        /* Responsivo */
-        @media (max-width: 768px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-            
-            .preview-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .toolbar {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-            }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
         }
     </style>
 </head>
 <body>
-    <!-- Toolbar -->
-    <div class="toolbar">
-        <div class="toolbar-title">💰 Liquidity Pool Manager</div>
-        <div class="toolbar-buttons">
-            <button class="btn-excel" onclick="exportToExcel()">📥 Exportar Excel</button>
-            <button class="btn-excel" onclick="saveData()">💾 Salvar</button>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div style="color: var(--text-secondary); font-size: 13px;">
+                Sincronizando com blockchain...
+            </div>
         </div>
     </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                LP Manager <span style="color: var(--text-secondary); font-weight: 400;">Institutional</span>
+            </div>
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="live-dot"></div>
+                    <span>API Connected</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-database" style="color: var(--accent);"></i>
+                    <span id="chainStatus">Multi-Chain</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-clock" style="color: var(--warning);"></i>
+                    <span id="lastUpdate">--:--:--</span>
+                </div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-secondary" onclick="refreshAll()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <button class="btn btn-primary" onclick="exportReport()">
+                <i class="fas fa-download"></i> Export Report
+            </button>
+        </div>
+    </header>
 
     <!-- Tabs -->
-    <div class="tabs">
-        <div class="tab" onclick="switchTab('pulse')">PULSE</div>
-        <div class="tab" onclick="switchTab('report')">REPORT</div>
-        <div class="tab active" onclick="switchTab('auto')">AUTO IMPORT</div>
+    <div class="tabs-container">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('dashboard')">
+                Dashboard <span class="badge" id="poolsCount">0</span>
+            </button>
+            <button class="tab" onclick="switchTab('auto-import')">
+                🔍 Auto Import
+            </button>
+            <button class="tab" onclick="switchTab('il-calculator')">
+                📊 IL Engine
+            </button>
+            <button class="tab" onclick="switchTab('analytics')">
+                📈 Analytics
+            </button>
+            <button class="tab" onclick="switchTab('settings')">
+                ⚙️ API Config
+            </button>
+        </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-container">
-        
-        <!-- TAB AUTO IMPORT -->
-        <div id="auto" class="tab-content active">
-            
-            <!-- Alerta informativo -->
+    <!-- Main Container -->
+    <div class="container">
+
+        <!-- DASHBOARD TAB -->
+        <div id="dashboard" class="tab-content active">
+            <!-- KPIs -->
+            <div class="grid grid-4" style="margin-bottom: 20px;">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Value Locked</div>
+                    <div class="kpi-value" id="kpiTVL">$0</div>
+                    <div class="kpi-change positive" id="kpiTVLChange">
+                        <i class="fas fa-arrow-up"></i> 0.00%
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Net PnL (Realized)</div>
+                    <div class="kpi-value" id="kpiPnL">$0</div>
+                    <div class="kpi-change" id="kpiPnLChange">
+                        0.00%
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Weighted APY</div>
+                    <div class="kpi-value" id="kpiAPY">0.00%</div>
+                    <div class="kpi-change neutral">
+                        <i class="fas fa-info-circle"></i> Annualized
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Sharpe Ratio (30d)</div>
+                    <div class="kpi-value" id="kpiSharpe">0.00</div>
+                    <div class="kpi-change neutral">
+                        Risk-adjusted
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <!-- PnL Curve Chart -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Equity Curve (PnL)</div>
+                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 10px;">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" id="pnlChart"></div>
+                    </div>
+                </div>
+
+                <!-- Chain Exposure -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Exposure by Chain</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" id="chainChart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Positions Table -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <div class="card-title">Active Positions</div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-secondary" onclick="filterPositions('all')">All</button>
+                        <button class="btn btn-secondary" onclick="filterPositions('profitable')">Profitable</button>
+                        <button class="btn btn-secondary" onclick="filterPositions('loss')">Loss</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="positionsTable">
+                        <thead>
+                            <tr>
+                                <th>Chain</th>
+                                <th>Protocol</th>
+                                <th>Pair</th>
+                                <th>Type</th>
+                                <th>Value</th>
+                                <th>APY</th>
+                                <th>Fees</th>
+                                <th>IL</th>
+                                <th>Net PnL</th>
+                                <th>Risk</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positionsBody">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- AUTO IMPORT TAB -->
+        <div id="auto-import" class="tab-content">
             <div class="alert alert-info">
-                <strong>📋 Como usar:</strong> Cole o endereço da sua carteira pública (ex: 0x...) e o sistema buscará automaticamente suas posições em pools de liquidez via APIs públicas. 
-                <strong>Não é necessário conectar wallet!</strong>
+                <i class="fas fa-info-circle"></i>
+                <div>
+                    <strong>Auto-Detect LP Positions</strong><br>
+                    Insira seu endereço público e selecione as chains. O sistema detectará automaticamente:
+                    Uniswap V3 NFTs, PancakeSwap positions, Curve LPs, Beefy vaults, e mais.
+                </div>
             </div>
 
-            <!-- Formulário de busca -->
-            <div class="card">
-                <div class="card-title">🔍 Buscar Posições de Liquidez</div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Endereço da Carteira (Wallet)</label>
-                        <input type="text" 
-                               class="form-input" 
-                               id="walletAddress" 
-                               placeholder="0x1234...5678"
-                               value="">
-                        <div class="form-hint">Ex: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb</div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Wallet Configuration</div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Blockchain</label>
-                        <select class="form-input" id="blockchain">
-                            <option value="ethereum">Ethereum</option>
-                            <option value="bsc">BNB Smart Chain</option>
-                            <option value="polygon">Polygon</option>
-                            <option value="arbitrum">Arbitrum</option>
-                            <option value="base">Base</option>
-                            <option value="avalanche">Avalanche</option>
-                            <option value="optimism">Optimism</option>
-                        </select>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Wallet Address</label>
+                            <input type="text" class="form-input" id="walletAddress" 
+                                   placeholder="0x... or Solana address">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Select Chains</label>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" value="ethereum" checked> Ethereum
+                                </label>
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" value="bsc" checked> BSC
+                                </label>
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" value="polygon"> Polygon
+                                </label>
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" value="arbitrum"> Arbitrum
+                                </label>
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" value="base"> Base
+                                </label>
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" value="avalanche"> Avalanche
+                                </label>
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" value="optimism"> Optimism
+                                </label>
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" value="solana"> Solana
+                                </label>
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" value="sui"> Sui
+                                </label>
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" value="aptos"> Aptos
+                                </label>
+                                <label class="checkbox-wrapper">
+                                    <input type="checkbox" value="hyperliquid"> Hyperliquid
+                                </label>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="scanWallet()" style="width: 100%;">
+                            <i class="fas fa-search"></i> Scan Wallet
+                        </button>
                     </div>
                 </div>
 
-                <div class="checkbox-group">
-                    <input type="checkbox" id="includeClosed" checked>
-                    <label for="includeClosed">Incluir pools fechadas/históricas</label>
-                </div>
-
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn btn-primary" onclick="searchPools()" id="btnSearch">
-                        🔍 Buscar Pools
-                    </button>
-                    <button class="btn btn-secondary" onclick="clearForm()">
-                        ️ Limpar
-                    </button>
-                </div>
-            </div>
-
-            <!-- Loading -->
-            <div id="loadingSpinner" class="spinner-overlay">
-                <div class="spinner-content">
-                    <div class="loading" style="width: 40px; height: 40px; border-width: 4px;"></div>
-                    <div class="spinner-text">Buscando dados na blockchain...</div>
-                </div>
-            </div>
-
-            <!-- Preview dos dados encontrados -->
-            <div id="previewBox" class="preview-box">
-                <div class="preview-title">📊 Dados Encontrados</div>
-                
-                <div id="previewContent">
-                    <!-- Conteúdo dinâmico -->
-                </div>
-
-                <div style="margin-top: 20px; display: flex; gap: 10px;">
-                    <button class="btn btn-success" onclick="importToPulse()">
-                        ✅ Importar para PULSE
-                    </button>
-                    <button class="btn btn-secondary" onclick="hidePreview()">
-                        ❌ Cancelar
-                    </button>
-                </div>
-            </div>
-
-            <!-- Histórico de buscas -->
-            <div class="card" id="historyCard" style="display: none;">
-                <div class="card-title">📜 Histórico de Buscas</div>
-                <div id="searchHistory">
-                    <!-- Histórico dinâmico -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Detected Positions</div>
+                    </div>
+                    <div class="card-body" id="scanResults">
+                        <p style="color: var(--text-secondary); text-align: center; padding: 40px;">
+                            Nenhuma posição detectada ainda.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- TAB PULSE (simplificado) -->
-        <div id="pulse" class="tab-content">
-            <div class="card">
-                <div class="card-title">📋 PULSE - Suas Pools</div>
-                <div id="pulseContent">
-                    <p style="color: #666; text-align: center; padding: 40px;">
-                        Nenhuma pool cadastrada. Use a aba <strong>AUTO IMPORT</strong> para buscar automaticamente!
-                    </p>
+        <!-- IL CALCULATOR TAB -->
+        <div id="il-calculator" class="tab-content">
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Impermanent Loss Calculator</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Entry Price (Token A)</label>
+                                <input type="number" class="form-input" id="ilEntryPrice" 
+                                       value="2000" step="0.01" oninput="calculateIL()">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Current Price (Token A)</label>
+                                <input type="number" class="form-input" id="ilCurrentPrice" 
+                                       value="2500" step="0.01" oninput="calculateIL()">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Initial Investment (USD)</label>
+                            <input type="number" class="form-input" id="ilInvestment" 
+                                   value="10000" step="100" oninput="calculateIL()">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Fees Earned (USD)</label>
+                            <input type="number" class="form-input" id="ilFees" 
+                                   value="150" step="10" oninput="calculateIL()">
+                        </div>
+
+                        <div style="margin-top: 20px; padding: 20px; background: var(--bg-primary); border-radius: 8px;">
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                                <div>
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">
+                                        HODL Value
+                                    </div>
+                                    <div style="font-size: 20px; font-weight: 700; font-family: monospace;" 
+                                         id="ilHodlValue">$0</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">
+                                        LP Value
+                                    </div>
+                                    <div style="font-size: 20px; font-weight: 700; font-family: monospace; color: var(--warning);" 
+                                         id="ilLPValue">$0</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">
+                                        Impermanent Loss
+                                    </div>
+                                    <div style="font-size: 20px; font-weight: 700; font-family: monospace; color: var(--danger);" 
+                                         id="ilLoss">$0</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">
+                                        Net Yield (Fees - IL)
+                                    </div>
+                                    <div style="font-size: 20px; font-weight: 700; font-family: monospace; color: var(--success);" 
+                                         id="ilNetYield">$0</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">IL Visualization</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" id="ilChart"></div>
+                        <div style="margin-top: 20px; padding: 16px; background: var(--bg-primary); border-radius: 6px; font-size: 11px;">
+                            <strong style="color: var(--accent);">Fórmula:</strong><br>
+                            IL = 2 × √(P) / (1 + P) - 1<br>
+                            Onde P = Preço Atual / Preço Inicial
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- TAB REPORT (simplificado) -->
-        <div id="report" class="tab-content">
+        <!-- ANALYTICS TAB -->
+        <div id="analytics" class="tab-content">
+            <div class="grid grid-3">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Max Drawdown</div>
+                    </div>
+                    <div class="card-body">
+                        <div style="font-size: 32px; font-weight: 700; color: var(--danger); font-family: monospace;" 
+                             id="analyticsDrawdown">-0.00%</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill progress-danger" style="width: 0%" id="drawdownBar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Win Rate</div>
+                    </div>
+                    <div class="card-body">
+                        <div style="font-size: 32px; font-weight: 700; color: var(--success); font-family: monospace;" 
+                             id="analyticsWinRate">0%</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill progress-success" style="width: 0%" id="winRateBar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Profit Factor</div>
+                    </div>
+                    <div class="card-body">
+                        <div style="font-size: 32px; font-weight: 700; color: var(--accent); font-family: monospace;" 
+                             id="analyticsProfitFactor">0.00</div>
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 8px;">
+                            Gross Profit / Gross Loss
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <div class="card-title">Token Exposure Heatmap</div>
+                </div>
+                <div class="card-body">
+                    <div class="heatmap" id="tokenHeatmap">
+                        <!-- Dynamic -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS TAB -->
+        <div id="settings" class="tab-content">
             <div class="card">
-                <div class="card-title">📊 REPORT</div>
-                <div id="reportContent">
-                    <p style="color: #666; text-align: center; padding: 40px;">
-                        Relatório será gerado após importar pools.
-                    </p>
+                <div class="card-header">
+                    <div class="card-title">API Configuration</div>
+                </div>
+                <div class="card-body">
+                    <div class="api-config">
+                        <div class="api-config-header">
+                            <div class="api-config-title">Moralis API</div>
+                            <span class="badge badge-warning">Required</span>
+                        </div>
+                        <div class="form-group">
+                            <input type="password" class="form-input" id="moralisKey" 
+                                   placeholder="Enter Moralis API Key">
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">
+                                Get your key at <a href="https://moralis.io" style="color: var(--accent);">moralis.io</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="api-config">
+                        <div class="api-config-header">
+                            <div class="api-config-title">Covalent API</div>
+                            <span class="badge badge-success">Optional</span>
+                        </div>
+                        <div class="form-group">
+                            <input type="password" class="form-input" id="covalentKey" 
+                                   placeholder="Enter Covalent API Key">
+                        </div>
+                    </div>
+
+                    <div class="api-config">
+                        <div class="api-config-header">
+                            <div class="api-config-title">Alchemy API</div>
+                            <span class="badge badge-success">Optional</span>
+                        </div>
+                        <div class="form-group">
+                            <input type="password" class="form-input" id="alchemyKey" 
+                                   placeholder="Enter Alchemy API Key">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="saveAPIKeys()">
+                        <i class="fas fa-save"></i> Save Configuration
+                    </button>
                 </div>
             </div>
         </div>
@@ -525,456 +1014,699 @@
     </div>
 
     <script>
-        // Dados
-        let poolsData = [];
-        let searchResults = [];
-        let searchHistory = JSON.parse(localStorage.getItem('lp_search_history')) || [];
+        /**
+         * LP MANAGER INSTITUTIONAL ENGINE
+         * Professional-grade liquidity pool management system
+         */
 
-        // APIs disponíveis
-        const APIS = {
-            etherscan: 'https://api.etherscan.io/api',
-            bscscan: 'https://api.bscscan.com/api',
-            polygonscan: 'https://api.polygonscan.com/api',
-            arbiscan: 'https://api.arbiscan.io/api',
-            basescan: 'https://api.basescan.org/api',
-            snowtrace: 'https://api.snowtrace.io/api',
-            optimisticscan: 'https://api-optimistic.etherscan.io/api',
-            dexscreener: 'https://api.dexscreener.com/latest/dex',
-            defillama: 'https://yields.llama.fi/pools'
+        // ==========================================
+        // CONFIGURATION & STATE
+        // ==========================================
+        
+        const CONFIG = {
+            chains: {
+                ethereum: { id: 1, name: 'Ethereum', rpc: 'https://eth-mainnet.g.alchemy.com/v2/', explorer: 'etherscan' },
+                bsc: { id: 56, name: 'BSC', rpc: 'https://bsc-dataseed.binance.org/', explorer: 'bscscan' },
+                polygon: { id: 137, name: 'Polygon', rpc: 'https://polygon-rpc.com/', explorer: 'polygonscan' },
+                arbitrum: { id: 42161, name: 'Arbitrum', rpc: 'https://arb1.arbitrum.io/rpc', explorer: 'arbiscan' },
+                base: { id: 8453, name: 'Base', rpc: 'https://mainnet.base.org', explorer: 'basescan' },
+                avalanche: { id: 43114, name: 'Avalanche', rpc: 'https://api.avax.network/ext/bc/C/rpc', explorer: 'snowtrace' },
+                optimism: { id: 10, name: 'Optimism', rpc: 'https://mainnet.optimism.io', explorer: 'optimistic.etherscan' },
+                solana: { id: 'solana', name: 'Solana', rpc: 'https://api.mainnet-beta.solana.com', explorer: 'solscan' },
+                sui: { id: 'sui', name: 'Sui', rpc: 'https://fullnode.mainnet.sui.io', explorer: 'suiscan' },
+                aptos: { id: 'aptos', name: 'Aptos', rpc: 'https://fullnode.mainnet.aptoslabs.com', explorer: 'aptoscan' },
+                hyperliquid: { id: 'hyperliquid', name: 'Hyperliquid', rpc: 'https://api.hyperliquid.xyz', explorer: 'hyperliquid' }
+            },
+            protocols: {
+                uniswapV3: { name: 'Uniswap V3', type: 'concentrated', factory: '0x1F98431c8aD98523631AE4a59f267346ea31F984' },
+                uniswapV2: { name: 'Uniswap V2', type: 'standard', factory: '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f' },
+                pancakeV3: { name: 'PancakeSwap V3', type: 'concentrated', factory: '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865' },
+                pancakeV2: { name: 'PancakeSwap V2', type: 'standard', factory: '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73' },
+                curve: { name: 'Curve Finance', type: 'stable', factory: '0xB9fC157394Af804a3578134A6585C0dc9cc990d4' },
+                balancer: { name: 'Balancer', type: 'weighted', factory: '0xBA12222222228d8Ba445958a75a0704d566BF2C8' },
+                aerodrome: { name: 'Aerodrome', type: 've(3,3)', factory: '0x420DD381b31aEf6683db6B902084cB0FFECe40Da' },
+                beefy: { name: 'Beefy Finance', type: 'vault', factory: '0x' }
+            },
+            apiKeys: {
+                moralis: localStorage.getItem('moralis_key') || '',
+                covalent: localStorage.getItem('covalent_key') || '',
+                alchemy: localStorage.getItem('alchemy_key') || ''
+            }
         };
 
-        // Mapeamento de exploradores
-        const EXPLORERS = {
-            ethereum: 'etherscan',
-            bsc: 'bscscan',
-            polygon: 'polygonscan',
-            arbitrum: 'arbiscan',
-            base: 'basescan',
-            avalanche: 'snowtrace',
-            optimism: 'optimisticscan'
+        let state = {
+            positions: JSON.parse(localStorage.getItem('lp_positions')) || [],
+            history: JSON.parse(localStorage.getItem('lp_history')) || [],
+            currentTab: 'dashboard',
+            charts: {}
         };
 
-        // Inicialização
-        window.onload = function() {
-            loadSavedData();
-            renderHistory();
-        };
+        // ==========================================
+        // IL CALCULATION ENGINE (PROFESSIONAL)
+        // ==========================================
 
-        // Buscar pools
-        async function searchPools() {
-            const wallet = document.getElementById('walletAddress').value.trim();
-            const chain = document.getElementById('blockchain').value;
-            const includeClosed = document.getElementById('includeClosed').checked;
-
-            // Validação
-            if (!wallet || !wallet.startsWith('0x') || wallet.length !== 42) {
-                alert('❌ Endereço de carteira inválido! Deve começar com 0x e ter 42 caracteres.');
-                return;
+        class ILEngine {
+            /**
+             * Calculate Impermanent Loss
+             * Formula: IL = 2 * sqrt(P) / (1 + P) - 1
+             * @param {number} entryPrice - Entry price of token A
+             * @param {number} currentPrice - Current price of token A
+             * @param {number} investment - Initial investment in USD
+             * @param {number} fees - Fees earned in USD
+             * @returns {Object} IL calculation results
+             */
+            static calculate(entryPrice, currentPrice, investment, fees = 0) {
+                const priceRatio = currentPrice / entryPrice;
+                
+                // IL Formula
+                const ilRatio = (2 * Math.sqrt(priceRatio) / (1 + priceRatio)) - 1;
+                const ilPercent = ilRatio * 100;
+                
+                // Values
+                const hodlValue = investment * priceRatio;
+                const lpValue = investment * (1 + ilRatio);
+                const ilLoss = hodlValue - lpValue;
+                
+                // Net calculations
+                const netYield = fees - ilLoss;
+                const netYieldPercent = (netYield / investment) * 100;
+                
+                return {
+                    priceRatio,
+                    ilRatio,
+                    ilPercent,
+                    hodlValue,
+                    lpValue,
+                    ilLoss,
+                    fees,
+                    netYield,
+                    netYieldPercent,
+                    breakEvenFees: ilLoss // Fees needed to break even
+                };
             }
 
-            // Mostrar loading
-            document.getElementById('loadingSpinner').classList.add('show');
-            document.getElementById('btnSearch').disabled = true;
-
-            try {
-                // Buscar dados via APIs
-                const pools = await fetchWalletPools(wallet, chain);
+            /**
+             * Calculate IL for concentrated liquidity (Uniswap V3)
+             * More complex formula considering price range
+             */
+            static calculateConcentrated(entryPrice, currentPrice, investment, lowerTick, upperTick, fees = 0) {
+                // Simplified concentrated liquidity IL
+                const standardIL = this.calculate(entryPrice, currentPrice, investment, fees);
                 
-                if (pools.length === 0) {
-                    alert('⚠️ Nenhuma pool encontrada para esta carteira.');
-                    hidePreview();
-                } else {
-                    // Salvar resultados
-                    searchResults = pools;
-                    
-                    // Mostrar preview
-                    showPreview(pools);
-                    
-                    // Salvar no histórico
-                    addToHistory(wallet, chain, pools.length);
-                }
-            } catch (error) {
-                console.error('Erro na busca:', error);
-                alert('❌ Erro ao buscar dados: ' + error.message);
-            } finally {
-                document.getElementById('loadingSpinner').classList.remove('show');
-                document.getElementById('btnSearch').disabled = false;
+                // Concentrated liquidity has higher IL but higher fees
+                const concentrationMultiplier = 1 + (Math.abs(upperTick - lowerTick) / 1000);
+                const concentratedIL = standardIL.ilLoss * concentrationMultiplier;
+                const concentratedFees = fees * concentrationMultiplier; // Higher fees compensate
+                
+                return {
+                    ...standardIL,
+                    ilLoss: concentratedIL,
+                    fees: concentratedFees,
+                    netYield: concentratedFees - concentratedIL,
+                    isConcentrated: true,
+                    multiplier: concentrationMultiplier
+                };
             }
         }
 
-        // Fetch dados da wallet
-        async function fetchWalletPools(wallet, chain) {
-            const explorer = EXPLORERS[chain];
-            const apiKey = ''; // Em produção, usar API key
-            
-            const pools = [];
-            
-            try {
-                // 1. Buscar transações de add liquidity
-                const txs = await fetchLiquidityTransactions(wallet, explorer, apiKey);
+        // ==========================================
+        // BLOCKCHAIN DETECTION ENGINE
+        // ==========================================
+
+        class BlockchainScanner {
+            constructor(apiKeys) {
+                this.apiKeys = apiKeys;
+                this.endpoints = {
+                    moralis: 'https://deep-index.moralis.io/api/v2',
+                    covalent: 'https://api.covalenthq.com/v1',
+                    alchemy: 'https://eth-mainnet.g.alchemy.com/v2'
+                };
+            }
+
+            /**
+             * Scan wallet for LP positions across multiple chains
+             */
+            async scanWallet(address, chains) {
+                const positions = [];
                 
-                // 2. Para cada transação, buscar detalhes da pool
-                for (const tx of txs.slice(0, 10)) { // Limitar a 10 pools
-                    const poolData = await fetchPoolDetails(tx, chain);
-                    if (poolData) {
-                        pools.push(poolData);
+                for (const chain of chains) {
+                    try {
+                        const chainPositions = await this.scanChain(address, chain);
+                        positions.push(...chainPositions);
+                    } catch (error) {
+                        console.error(`Error scanning ${chain}:`, error);
                     }
                 }
                 
-                // 3. Buscar dados complementares via DexScreener
-                const enrichedPools = await enrichWithDexScreener(pools);
+                return positions;
+            }
+
+            /**
+             * Scan specific chain for LP positions
+             */
+            async scanChain(address, chainName) {
+                const chain = CONFIG.chains[chainName];
+                const positions = [];
+
+                // Use Moralis API if available
+                if (this.apiKeys.moralis) {
+                    const moralisPositions = await this.scanWithMoralis(address, chain, chainName);
+                    positions.push(...moralisPositions);
+                }
+
+                // Use Covalent API if available
+                if (this.apiKeys.covalent) {
+                    const covalentPositions = await this.scanWithCovalent(address, chain, chainName);
+                    positions.push(...covalentPositions);
+                }
+
+                // Use Alchemy for NFT detection (Uniswap V3 positions)
+                if (this.apiKeys.alchemy && chainName === 'ethereum') {
+                    const nftPositions = await this.scanWithAlchemy(address, chain);
+                    positions.push(...nftPositions);
+                }
+
+                return positions;
+            }
+
+            /**
+             * Scan using Moralis API
+             */
+            async scanWithMoralis(address, chain, chainName) {
+                const positions = [];
                 
-                return enrichedPools;
+                try {
+                    // Get wallet's NFTs (for Uniswap V3 positions)
+                    const nftResponse = await fetch(
+                        `${this.endpoints.moralis}/${address}/nft?chain=${chainName}`,
+                        { headers: { 'X-API-Key': this.apiKeys.moralis } }
+                    );
+                    const nfts = await nftResponse.json();
+                    
+                    // Filter Uniswap V3 NFTs
+                    const uniswapV3NFTs = nfts.result?.filter(nft => 
+                        nft.token_address?.toLowerCase() === '0xc36442b4a4522e871399cd717abdd847ab11fe88'
+                    ) || [];
+                    
+                    for (const nft of uniswapV3NFTs) {
+                        const position = await this.fetchUniswapV3Position(nft.token_id, chain);
+                        if (position) {
+                            positions.push({
+                                ...position,
+                                chain: chainName,
+                                protocol: 'Uniswap V3',
+                                type: 'concentrated',
+                                tokenId: nft.token_id
+                            });
+                        }
+                    }
+                    
+                    // Get ERC20 LP tokens
+                    const erc20Response = await fetch(
+                        `${this.endpoints.moralis}/${address}/erc20?chain=${chainName}`,
+                        { headers: { 'X-API-Key': this.apiKeys.moralis } }
+                    );
+                    const tokens = await erc20Response.json();
+                    
+                    // Filter LP tokens (Uniswap V2, PancakeSwap, etc.)
+                    const lpTokens = tokens.result?.filter(token => 
+                        token.balance > 0 && this.isLPToken(token.token_address)
+                    ) || [];
+                    
+                    for (const token of lpTokens) {
+                        const lpData = await this.fetchLPData(token.token_address, chain, chainName);
+                        if (lpData) {
+                            positions.push({
+                                ...lpData,
+                                chain: chainName,
+                                balance: token.balance
+                            });
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.error('Moralis scan error:', error);
+                }
                 
-            } catch (error) {
-                console.error('Erro ao buscar pools:', error);
-                // Retornar dados mockados para demonstração
-                return getMockPools(wallet, chain);
+                return positions;
+            }
+
+            /**
+             * Scan using Covalent API
+             */
+            async scanWithCovalent(address, chain, chainName) {
+                const positions = [];
+                const chainId = CONFIG.chains[chainName].id;
+                
+                try {
+                    // Get token balances with metadata
+                    const response = await fetch(
+                        `${this.endpoints.covalent}/${chainId}/address/${address}/balances_v2/?key=${this.apiKeys.covalent}`
+                    );
+                    const data = await response.json();
+                    
+                    // Process LP tokens
+                    const lpBalances = data.data?.items?.filter(item => 
+                        item.balance > 0 && this.isLPToken(item.contract_address)
+                    ) || [];
+                    
+                    for (const balance of lpBalances) {
+                        const lpData = await this.fetchLPData(balance.contract_address, chain, chainName);
+                        if (lpData) {
+                            positions.push({
+                                ...lpData,
+                                chain: chainName,
+                                balance: balance.balance
+                            });
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.error('Covalent scan error:', error);
+                }
+                
+                return positions;
+            }
+
+            /**
+             * Scan using Alchemy API (for NFTs)
+             */
+            async scanWithAlchemy(address, chain) {
+                const positions = [];
+                
+                try {
+                    const response = await fetch(
+                        `${this.endpoints.alchemy}/${this.apiKeys.alchemy}/getNFTs?owner=${address}&contractAddresses=0xC36442b4a4522E871399CD717aBDD847Ab11FE88`,
+                        { headers: { 'accept': 'application/json' } }
+                    );
+                    const data = await response.json();
+                    
+                    for (const nft of data.ownedNfts) {
+                        const position = await this.fetchUniswapV3Position(nft.tokenId, chain);
+                        if (position) {
+                            positions.push({
+                                ...position,
+                                chain: 'ethereum',
+                                protocol: 'Uniswap V3',
+                                type: 'concentrated',
+                                tokenId: nft.tokenId
+                            });
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.error('Alchemy scan error:', error);
+                }
+                
+                return positions;
+            }
+
+            /**
+             * Fetch Uniswap V3 position details
+             */
+            async fetchUniswapV3Position(tokenId, chain) {
+                // This would require actual blockchain RPC calls
+                // For demo, return mock data
+                return {
+                    pair: 'ETH/USDC',
+                    value: Math.random() * 10000 + 1000,
+                    apy: (Math.random() * 20 + 5).toFixed(2),
+                    fees: Math.random() * 500,
+                    il: (Math.random() * 3).toFixed(2),
+                    lowerPrice: 1800,
+                    upperPrice: 2200,
+                    inRange: true
+                };
+            }
+
+            /**
+             * Fetch LP token data
+             */
+            async fetchLPData(tokenAddress, chain, chainName) {
+                // Mock implementation - would use actual DEX subgraphs
+                const protocols = ['Uniswap V2', 'PancakeSwap', 'SushiSwap', 'Curve'];
+                const pairs = ['ETH/USDC', 'BNB/BUSD', 'WBTC/ETH', 'USDC/DAI'];
+                
+                return {
+                    protocol: protocols[Math.floor(Math.random() * protocols.length)],
+                    pair: pairs[Math.floor(Math.random() * pairs.length)],
+                    type: 'standard',
+                    value: Math.random() * 5000 + 500,
+                    apy: (Math.random() * 15 + 3).toFixed(2),
+                    fees: Math.random() * 200,
+                    il: (Math.random() * 2).toFixed(2)
+                };
+            }
+
+            /**
+             * Check if token is an LP token
+             */
+            isLPToken(address) {
+                // Check common LP token patterns
+                const lpPatterns = [
+                    '0x1f98431c8ad98523631ae4a59f267346ea31f984', // Uniswap V3 Position Manager
+                    'uniswap', 'pancake', 'sushi', 'curve', 'balancer'
+                ];
+                return lpPatterns.some(pattern => address.toLowerCase().includes(pattern));
             }
         }
 
-        // Fetch transações de liquidez
-        async function fetchLiquidityTransactions(wallet, explorer, apiKey) {
-            // Em produção, usar API real
-            // Por enquanto, retornar mock
-            return [
-                { hash: '0xabc123', timeStamp: Date.now() / 1000 - 86400 * 30 },
-                { hash: '0xdef456', timeStamp: Date.now() / 1000 - 86400 * 15 }
-            ];
-        }
+        // ==========================================
+        // ANALYTICS ENGINE
+        // ==========================================
 
-        // Fetch detalhes da pool
-        async function fetchPoolDetails(tx, chain) {
-            // Dados mockados para demonstração
-            const mockPools = {
-                ethereum: [
-                    { dex: 'Uniswap V3', pair: 'ETH/USDC', tvl: 125000000, apy: 12.5 },
-                    { dex: 'Uniswap V2', pair: 'WBTC/ETH', tvl: 85000000, apy: 8.3 }
-                ],
-                bsc: [
-                    { dex: 'PancakeSwap V3', pair: 'BNB/BUSD', tvl: 45000000, apy: 15.2 },
-                    { dex: 'PancakeSwap V2', pair: 'CAKE/BNB', tvl: 12000000, apy: 22.1 }
-                ]
-            };
-            
-            const chainPools = mockPools[chain] || mockPools.ethereum;
-            const randomPool = chainPools[Math.floor(Math.random() * chainPools.length)];
-            
-            return {
-                dex: randomPool.dex,
-                pair: randomPool.pair,
-                tvl: randomPool.tvl,
-                apy: randomPool.apy,
-                chain: chain,
-                address: '0x' + Math.random().toString(16).substr(2, 40),
-                entryDate: new Date().toISOString().split('T')[0],
-                valueApplied: Math.floor(Math.random() * 10000) + 1000,
-                fees: Math.floor(Math.random() * 500) + 50,
-                il: (Math.random() * 2).toFixed(4) + ' ' + randomPool.pair.split('/')[0]
-            };
-        }
-
-        // Enriquecer com DexScreener
-        async function enrichWithDexScreener(pools) {
-            // Em produção, chamar API real do DexScreener
-            return pools.map(pool => ({
-                ...pool,
-                price: Math.random() * 3000 + 1500,
-                volume24h: Math.floor(Math.random() * 10000000),
-                liquidity: pool.tvl
-            }));
-        }
-
-        // Dados mockados (fallback)
-        function getMockPools(wallet, chain) {
-            const chains = {
-                ethereum: ['ETH/USDC', 'WBTC/ETH', 'USDC/DAI'],
-                bsc: ['BNB/BUSD', 'CAKE/BNB', 'USDT/BUSD'],
-                polygon: ['MATIC/USDC', 'WMATIC/ETH', 'USDC/DAI'],
-                arbitrum: ['ARB/ETH', 'USDC/USDT', 'GMX/ETH'],
-                base: ['ETH/USDC', 'cbETH/ETH', 'USDC/USDbC']
-            };
-            
-            const pairs = chains[chain] || chains.ethereum;
-            const dexes = ['Uniswap V3', 'Uniswap V2', 'Sushiswap', 'Curve'];
-            
-            return pairs.map((pair, index) => ({
-                dex: dexes[index % dexes.length],
-                pair: pair,
-                tvl: Math.floor(Math.random() * 100000000) + 1000000,
-                apy: (Math.random() * 30 + 5).toFixed(2),
-                chain: chain,
-                address: '0x' + Math.random().toString(16).substr(2, 40),
-                entryDate: new Date(Date.now() - Math.random() * 86400000 * 30).toISOString().split('T')[0],
-                valueApplied: Math.floor(Math.random() * 10000) + 1000,
-                fees: Math.floor(Math.random() * 500) + 50,
-                il: (Math.random() * 3).toFixed(4) + ' ' + pair.split('/')[0],
-                balance: 0,
-                withdrawal: 0,
-                obs: 'Importado automaticamente'
-            }));
-        }
-
-        // Mostrar preview
-        function showPreview(pools) {
-            const previewBox = document.getElementById('previewBox');
-            const previewContent = document.getElementById('previewContent');
-            
-            let html = `
-                <div class="alert alert-success">
-                    ✅ Encontradas <strong>${pools.length} pools</strong> para esta carteira!
-                </div>
+        class AnalyticsEngine {
+            /**
+             * Calculate Sharpe Ratio
+             * Sharpe = (Rp - Rf) / σp
+             */
+            static calculateSharpeRatio(returns, riskFreeRate = 0.02) {
+                if (returns.length < 2) return 0;
                 
-                <table class="preview-table">
-                    <thead>
-                        <tr>
-                            <th>DEX</th>
-                            <th>Par</th>
-                            <th>Chain</th>
-                            <th>TVL</th>
-                            <th>APY</th>
-                            <th>Valor Aplicado</th>
-                            <th>Fees</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
-            pools.forEach(pool => {
-                html += `
-                    <tr>
-                        <td><strong>${pool.dex}</strong></td>
-                        <td>${pool.pair}</td>
-                        <td><span class="badge badge-success">${pool.chain.toUpperCase()}</span></td>
-                        <td>$${(pool.tvl / 1000000).toFixed(2)}M</td>
-                        <td class="positive">${pool.apy}%</td>
-                        <td>$${pool.valueApplied.toLocaleString()}</td>
-                        <td class="positive">$${pool.fees.toLocaleString()}</td>
-                    </tr>
-                `;
-            });
-            
-            html += `</tbody></table>`;
-            
-            previewContent.innerHTML = html;
-            previewBox.classList.add('show');
-            
-            // Scroll para preview
-            previewBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        // Importar para PULSE
-        function importToPulse() {
-            if (searchResults.length === 0) return;
-            
-            // Adicionar ao array principal
-            poolsData = [...poolsData, ...searchResults];
-            
-            // Salvar
-            saveData();
-            
-            // Atualizar UI
-            renderPulse();
-            
-            // Mensagem de sucesso
-            alert(`✅ ${searchResults.length} pool(s) importada(s) com sucesso para a aba PULSE!`);
-            
-            // Limpar preview
-            hidePreview();
-            
-            // Ir para aba PULSE
-            switchTab('pulse');
-        }
-
-        // Renderizar PULSE
-        function renderPulse() {
-            const content = document.getElementById('pulseContent');
-            
-            if (poolsData.length === 0) {
-                content.innerHTML = `
-                    <p style="color: #666; text-align: center; padding: 40px;">
-                        Nenhuma pool cadastrada. Use a aba <strong>AUTO IMPORT</strong> para buscar automaticamente!
-                    </p>
-                `;
-                return;
+                const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+                const variance = returns.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / returns.length;
+                const stdDev = Math.sqrt(variance);
+                
+                return ((mean - riskFreeRate) / stdDev).toFixed(2);
             }
-            
-            let html = `
-                <table class="preview-table">
-                    <thead>
-                        <tr>
-                            <th>DEX</th>
-                            <th>Par</th>
-                            <th>Chain</th>
-                            <th>Valor Aplicado</th>
-                            <th>Fees</th>
-                            <th>IL</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            
-            poolsData.forEach((pool, index) => {
-                html += `
-                    <tr>
-                        <td>${pool.dex}</td>
-                        <td>${pool.pair}</td>
-                        <td><span class="badge badge-success">${pool.chain ? pool.chain.toUpperCase() : 'ETH'}</span></td>
-                        <td>$${pool.valueApplied.toLocaleString()}</td>
-                        <td class="positive">$${pool.fees.toLocaleString()}</td>
-                        <td>${pool.il}</td>
-                        <td><span class="badge badge-warning">ATIVA</span></td>
-                    </tr>
-                `;
-            });
-            
-            html += `</tbody></table>`;
-            content.innerHTML = html;
-        }
 
-        // Adicionar ao histórico
-        function addToHistory(wallet, chain, count) {
-            searchHistory.unshift({
-                wallet: wallet.substr(0, 10) + '...',
-                chain: chain,
-                count: count,
-                date: new Date().toLocaleString()
-            });
-            
-            // Manter apenas últimos 10
-            searchHistory = searchHistory.slice(0, 10);
-            
-            localStorage.setItem('lp_search_history', JSON.stringify(searchHistory));
-            renderHistory();
-        }
-
-        // Renderizar histórico
-        function renderHistory() {
-            if (searchHistory.length === 0) {
-                document.getElementById('historyCard').style.display = 'none';
-                return;
+            /**
+             * Calculate Maximum Drawdown
+             */
+            static calculateMaxDrawdown(equityCurve) {
+                let peak = -Infinity;
+                let maxDrawdown = 0;
+                
+                for (const value of equityCurve) {
+                    if (value > peak) peak = value;
+                    const drawdown = (peak - value) / peak;
+                    if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+                }
+                
+                return (maxDrawdown * 100).toFixed(2);
             }
-            
-            const historyCard = document.getElementById('historyCard');
-            const historyContent = document.getElementById('searchHistory');
-            
-            let html = '<table class="preview-table"><thead><tr><th>Data</th><th>Wallet</th><th>Chain</th><th>Pools</th></tr></thead><tbody>';
-            
-            searchHistory.forEach(item => {
-                html += `
-                    <tr>
-                        <td>${item.date}</td>
-                        <td>${item.wallet}</td>
-                        <td>${item.chain.toUpperCase()}</td>
-                        <td>${item.count}</td>
-                    </tr>
-                `;
-            });
-            
-            html += '</tbody></table>';
-            historyContent.innerHTML = html;
-            historyCard.style.display = 'block';
+
+            /**
+             * Calculate Win Rate
+             */
+            static calculateWinRate(positions) {
+                if (positions.length === 0) return 0;
+                const profitable = positions.filter(p => p.netPnL > 0).length;
+                return ((profitable / positions.length) * 100).toFixed(1);
+            }
+
+            /**
+             * Calculate Profit Factor
+             */
+            static calculateProfitFactor(positions) {
+                const grossProfit = positions.filter(p => p.netPnL > 0).reduce((a, p) => a + p.netPnL, 0);
+                const grossLoss = Math.abs(positions.filter(p => p.netPnL < 0).reduce((a, p) => a + p.netPnL, 0));
+                
+                if (grossLoss === 0) return grossProfit > 0 ? '∞' : '0.00';
+                return (grossProfit / grossLoss).toFixed(2);
+            }
+
+            /**
+             * Calculate Weighted APY
+             */
+            static calculateWeightedAPY(positions) {
+                if (positions.length === 0) return 0;
+                
+                const totalValue = positions.reduce((a, p) => a + p.value, 0);
+                const weightedSum = positions.reduce((a, p) => a + (parseFloat(p.apy) * p.value), 0);
+                
+                return (weightedSum / totalValue).toFixed(2);
+            }
         }
 
-        // Limpar formulário
-        function clearForm() {
-            document.getElementById('walletAddress').value = '';
-            document.getElementById('blockchain').value = 'ethereum';
-            document.getElementById('includeClosed').checked = true;
-            hidePreview();
-        }
+        // ==========================================
+        // UI CONTROLLER
+        // ==========================================
 
-        // Esconder preview
-        function hidePreview() {
-            document.getElementById('previewBox').classList.remove('show');
-        }
+        let scanner = new BlockchainScanner(CONFIG.apiKeys);
 
-        // Trocar aba
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             
             document.getElementById(tabName).classList.add('active');
-            event.target.classList.add('active');
-        }
-
-        // Salvar dados
-        function saveData() {
-            localStorage.setItem('lp_pools_data', JSON.stringify(poolsData));
-            alert('✅ Dados salvos com sucesso!');
-        }
-
-        // Carregar dados salvos
-        function loadSavedData() {
-            const saved = localStorage.getItem('lp_pools_data');
-            if (saved) {
-                poolsData = JSON.parse(saved);
-                renderPulse();
+            event.target.closest('.tab').classList.add('active');
+            
+            if (tabName === 'dashboard') {
+                updateDashboard();
             }
         }
 
-        // Exportar Excel
-        function exportToExcel() {
-            if (poolsData.length === 0) {
-                alert('⚠️ Nenhuma pool para exportar!');
+        async function scanWallet() {
+            const address = document.getElementById('walletAddress').value.trim();
+            if (!address) {
+                alert('Please enter a wallet address');
                 return;
             }
+
+            const selectedChains = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(cb => cb.value);
+
+            document.getElementById('loadingOverlay').classList.add('show');
+
+            try {
+                const positions = await scanner.scanWallet(address, selectedChains);
+                
+                // Save to state
+                state.positions = [...state.positions, ...positions];
+                localStorage.setItem('lp_positions', JSON.stringify(state.positions));
+                
+                // Display results
+                displayScanResults(positions);
+                updateDashboard();
+                
+            } catch (error) {
+                console.error('Scan error:', error);
+                alert('Error scanning wallet: ' + error.message);
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('show');
+            }
+        }
+
+        function displayScanResults(positions) {
+            const container = document.getElementById('scanResults');
             
+            if (positions.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 40px;">No positions found</p>';
+                return;
+            }
+
+            let html = '<div class="table-container"><table class="data-table"><thead><tr><th>Chain</th><th>Protocol</th><th>Pair</th><th>Value</th><th>APY</th></tr></thead><tbody>';
+            
+            positions.forEach(pos => {
+                html += `
+                    <tr>
+                        <td><span class="badge badge-chain">${pos.chain}</span></td>
+                        <td>${pos.protocol}</td>
+                        <td>${pos.pair}</td>
+                        <td>$${pos.value?.toLocaleString() || '0'}</td>
+                        <td class="positive">${pos.apy}%</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table></div>';
+            html += `<button class="btn btn-primary" onclick="importPositions()" style="margin-top: 16px; width: 100%;">
+                <i class="fas fa-check"></i> Import ${positions.length} Positions
+            </button>`;
+            
+            container.innerHTML = html;
+        }
+
+        function importPositions() {
+            alert('Positions imported successfully!');
+            switchTab('dashboard');
+        }
+
+        function calculateIL() {
+            const entryPrice = parseFloat(document.getElementById('ilEntryPrice').value);
+            const currentPrice = parseFloat(document.getElementById('ilCurrentPrice').value);
+            const investment = parseFloat(document.getElementById('ilInvestment').value);
+            const fees = parseFloat(document.getElementById('ilFees').value);
+            
+            const result = ILEngine.calculate(entryPrice, currentPrice, investment, fees);
+            
+            document.getElementById('ilHodlValue').textContent = '$' + result.hodlValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('ilLPValue').textContent = '$' + result.lpValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('ilLoss').textContent = '$' + result.ilLoss.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ` (${result.ilPercent.toFixed(2)}%)`;
+            document.getElementById('ilNetYield').textContent = '$' + result.netYield.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            updateILChart(result);
+        }
+
+        function updateDashboard() {
+            // Update KPIs
+            const totalTVL = state.positions.reduce((a, p) => a + (p.value || 0), 0);
+            const totalPnL = state.positions.reduce((a, p) => a + (p.netPnL || 0), 0);
+            const weightedAPY = AnalyticsEngine.calculateWeightedAPY(state.positions);
+            
+            document.getElementById('kpiTVL').textContent = '$' + totalTVL.toLocaleString();
+            document.getElementById('kpiPnL').textContent = '$' + totalPnL.toLocaleString();
+            document.getElementById('kpiPnL').className = 'kpi-value ' + (totalPnL >= 0 ? 'positive' : 'negative');
+            document.getElementById('kpiAPY').textContent = weightedAPY + '%';
+            document.getElementById('poolsCount').textContent = state.positions.length;
+            
+            // Update positions table
+            updatePositionsTable();
+            
+            // Update charts
+            initCharts();
+            
+            // Update analytics
+            updateAnalytics();
+        }
+
+        function updatePositionsTable() {
+            const tbody = document.getElementById('positionsBody');
+            tbody.innerHTML = '';
+            
+            state.positions.forEach(pos => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><span class="badge badge-chain">${pos.chain || 'ETH'}</span></td>
+                    <td>${pos.protocol}</td>
+                    <td>${pos.pair}</td>
+                    <td><span class="badge badge-${pos.type === 'concentrated' ? 'warning' : 'success'}">${pos.type}</span></td>
+                    <td>$${(pos.value || 0).toLocaleString()}</td>
+                    <td class="positive">${pos.apy}%</td>
+                    <td>$${(pos.fees || 0).toLocaleString()}</td>
+                    <td class="negative">${pos.il}%</td>
+                    <td class="${(pos.netPnL || 0) >= 0 ? 'positive' : 'negative'}">$${(pos.netPnL || 0).toLocaleString()}</td>
+                    <td><div class="progress-bar"><div class="progress-fill progress-${pos.risk > 60 ? 'danger' : pos.risk > 30 ? 'warning' : 'success'}" style="width: ${pos.risk || 30}%"></div></div></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateAnalytics() {
+            const positions = state.positions;
+            
+            // Max Drawdown
+            const drawdown = AnalyticsEngine.calculateMaxDrawdown(state.history.map(h => h.value));
+            document.getElementById('analyticsDrawdown').textContent = '-' + drawdown + '%';
+            document.getElementById('drawdownBar').style.width = drawdown + '%';
+            
+            // Win Rate
+            const winRate = AnalyticsEngine.calculateWinRate(positions);
+            document.getElementById('analyticsWinRate').textContent = winRate + '%';
+            document.getElementById('winRateBar').style.width = winRate + '%';
+            
+            // Profit Factor
+            const profitFactor = AnalyticsEngine.calculateProfitFactor(positions);
+            document.getElementById('analyticsProfitFactor').textContent = profitFactor;
+            
+            // Token Heatmap
+            updateTokenHeatmap();
+        }
+
+        function updateTokenHeatmap() {
+            const tokens = {};
+            state.positions.forEach(pos => {
+                const [tokenA, tokenB] = pos.pair.split('/');
+                tokens[tokenA] = (tokens[tokenA] || 0) + (pos.value || 0) / 2;
+                tokens[tokenB] = (tokens[tokenB] || 0) + (pos.value || 0) / 2;
+            });
+            
+            const container = document.getElementById('tokenHeatmap');
+            container.innerHTML = '';
+            
+            Object.entries(tokens).forEach(([token, value]) => {
+                const percentage = (value / state.positions.reduce((a, p) => a + (p.value || 0), 0)) * 100;
+                const color = percentage > 30 ? 'var(--danger)' : percentage > 15 ? 'var(--warning)' : 'var(--success)';
+                
+                const cell = document.createElement('div');
+                cell.className = 'heatmap-cell';
+                cell.style.background = color + '33';
+                cell.style.border = '1px solid ' + color;
+                cell.innerHTML = `
+                    <div class="heatmap-label">${token}</div>
+                    <div class="heatmap-value" style="color: ${color}">${percentage.toFixed(1)}%</div>
+                `;
+                container.appendChild(cell);
+            });
+        }
+
+        function initCharts() {
+            // Initialize PnL Chart
+            const pnlContainer = document.getElementById('pnlChart');
+            if (pnlContainer && !state.charts.pnl) {
+                state.charts.pnl = LightweightCharts.createChart(pnlContainer, {
+                    width: pnlContainer.clientWidth,
+                    height: 300,
+                    layout: { background: { color: 'transparent' }, textColor: '#94a3b8' },
+                    grid: { vertLines: { color: '#2d3561' }, horzLines: { color: '#2d3561' } },
+                    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+                    rightPriceScale: { borderColor: '#2d3561' },
+                    timeScale: { borderColor: '#2d3561' }
+                });
+                
+                const series = state.charts.pnl.addAreaSeries({
+                    topColor: 'rgba(0, 212, 170, 0.4)',
+                    bottomColor: 'rgba(0, 212, 170, 0.1)',
+                    lineColor: '#00d4aa',
+                    lineWidth: 2
+                });
+                
+                // Mock data
+                const data = [];
+                let value = 10000;
+                for (let i = 0; i < 30; i++) {
+                    value = value * (1 + (Math.random() - 0.5) * 0.02);
+                    data.push({ time: new Date(Date.now() - (29-i) * 86400000).toISOString().split('T')[0], value: value });
+                }
+                series.setData(data);
+            }
+        }
+
+        function updateILChart(result) {
+            // IL visualization would go here
+        }
+
+        function saveAPIKeys() {
+            const moralisKey = document.getElementById('moralisKey').value;
+            const covalentKey = document.getElementById('covalentKey').value;
+            const alchemyKey = document.getElementById('alchemyKey').value;
+            
+            if (moralisKey) localStorage.setItem('moralis_key', moralisKey);
+            if (covalentKey) localStorage.setItem('covalent_key', covalentKey);
+            if (alchemyKey) localStorage.setItem('alchemy_key', alchemyKey);
+            
+            CONFIG.apiKeys = { moralis: moralisKey, covalent: covalentKey, alchemy: alchemyKey };
+            scanner = new BlockchainScanner(CONFIG.apiKeys);
+            
+            alert('API keys saved successfully!');
+        }
+
+        function exportReport() {
             const wb = XLSX.utils.book_new();
-            
-            const ws = XLSX.utils.json_to_sheet(poolsData);
-            XLSX.utils.book_append_sheet(wb, ws, "PULSE");
-            
-            XLSX.writeFile(wb, `Liquidity_Pools_${new Date().toISOString().split('T')[0]}.xlsx`);
+            const ws = XLSX.utils.json_to_sheet(state.positions);
+            XLSX.utils.book_append_sheet(wb, ws, 'Positions');
+            XLSX.writeFile(wb, `LP_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
         }
 
-        // Utilitários
-        function formatAddress(addr) {
-            if (!addr) return '';
-            return addr.substr(0, 10) + '...' + addr.substr(-4);
+        function refreshAll() {
+            updateDashboard();
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
         }
 
-        function formatUSD(value) {
-            return '$' + parseFloat(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        function filterPositions(filter) {
+            // Implementation for filtering positions
         }
+
+        // Initialize
+        window.onload = function() {
+            calculateIL();
+            updateDashboard();
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        };
+
+        // Auto-refresh every 5 minutes
+        setInterval(refreshAll, 300000);
     </script>
 </body>
 </html>
-```
-
-## 🎯 Funcionalidades Implementadas:
-
-### ✅ **Aba AUTO IMPORT:**
-1. **Input de Wallet Pública** - Só precisa colar o endereço (0x...)
-2. **Seleção de Blockchain** - Ethereum, BSC, Polygon, Arbitrum, Base, etc.
-3. **Busca Automática** - Consulta APIs públicas (Etherscan, DexScreener, DefiLlama)
-4. **Preview dos Dados** - Mostra todas as pools encontradas antes de importar
-5. **Importação 1-Click** - Botão para enviar tudo para a aba PULSE
-6. **Histórico de Buscas** - Salva últimas wallets consultadas
-
-### 🔧 **APIs Integradas:**
-- **Etherscan/BSCTrace/etc** - Busca transações da wallet
-- **DexScreener** - Preços, volume, TVL em tempo real
-- **DefiLlama** - APY e dados de yield
-
-### 💾 **Persistência:**
-- Salva no localStorage
-- Exporta para Excel
-- Histórico de buscas
-
-### 🎨 **Interface:**
-- Visual profissional estilo Excel
-- Loading spinner durante busca
-- Alertas coloridos (sucesso/erro/info)
-- Tabelas organizadas
-- Totalmente responsivo
-
-**Como usar:**
-1. Cole seu endereço público (ex: `0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb`)
-2. Selecione a blockchain
-3. Clique em "Buscar Pools"
-4. Revise os dados no preview
-5. Clique em "Importar para PULSE"
-
-**Pronto para usar!** 🚀
