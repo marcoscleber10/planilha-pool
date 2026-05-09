@@ -1,755 +1,680 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LP Quant Manager - Institutional</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Liquidity Pool Manager - Excel Style</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* CSS Reset & Variables */
-        :root {
-            --bg: #0d1117;
-            --surface: #161b22;
-            --border: #30363d;
-            --text-primary: #c9d1d9;
-            --text-secondary: #8b949e;
-            --accent: #58a6ff;
-            --success: #3fb950;
-            --danger: #f85149;
-            --warning: #d29922;
-            --font-mono: 'Courier New', monospace;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
+
         body {
-            background: var(--bg);
-            color: var(--text-primary);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            font-size: 13px;
-            line-height: 1.5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f0f0;
+            font-size: 11px;
         }
 
-        /* Layout - Terminal Style */
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 10px;
+        /* Toolbar estilo Excel */
+        .toolbar {
+            background: #217346;
+            color: white;
+            padding: 8px 15px;
             display: flex;
-            flex-direction: column;
-            height: 100vh;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 3px solid #1a5c37;
         }
 
-        /* Tabs Navigation */
-        .tabs {
-            display: flex;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 10px;
-        }
-        
-        .tab {
-            padding: 8px 16px;
-            cursor: pointer;
-            border-right: 1px solid var(--border);
-            color: var(--text-secondary);
+        .toolbar-title {
+            font-size: 16px;
             font-weight: 600;
-            transition: 0.2s;
         }
-        
-        .tab:hover { background: var(--border); }
-        .tab.active { background: var(--bg); color: var(--accent); border-top: 2px solid var(--accent); }
 
-        /* Content Area */
-        .content {
-            flex: 1;
-            overflow-y: auto;
-            display: none; /* Hidden by default */
-        }
-        .content.active { display: block; }
-
-        /* Cards & Grids */
-        .grid-kpi {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        .toolbar-buttons {
+            display: flex;
             gap: 10px;
-            margin-bottom: 20px;
         }
-        
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 15px;
-            border-radius: 4px;
-        }
-        
-        .card-title { color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
-        .card-value { font-size: 24px; font-weight: bold; margin-top: 5px; font-family: var(--font-mono); }
-        .card-sub { font-size: 12px; margin-top: 5px; }
-        
-        .pos { color: var(--success); }
-        .neg { color: var(--danger); }
 
-        /* Data Tables (Excel Style) */
-        .table-wrapper {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            overflow-x: auto;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            white-space: nowrap;
-        }
-        
-        th {
-            text-align: left;
-            padding: 8px 12px;
-            background: var(--bg);
-            color: var(--text-secondary);
+        .btn-excel {
+            background: white;
+            color: #217346;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 3px;
+            cursor: pointer;
             font-weight: 600;
             font-size: 11px;
-            border-bottom: 1px solid var(--border);
+        }
+
+        .btn-excel:hover {
+            background: #f0f0f0;
+        }
+
+        /* Tabs estilo Excel */
+        .tabs {
+            background: #f0f0f0;
+            border-bottom: 1px solid #d4d4d4;
+            display: flex;
+            padding-left: 10px;
+        }
+
+        .tab {
+            padding: 8px 20px;
+            background: #e6e6e6;
+            border: 1px solid #d4d4d4;
+            border-bottom: none;
+            cursor: pointer;
+            margin-right: 2px;
+            border-radius: 3px 3px 0 0;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            background: white;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+            color: #217346;
+            font-weight: 600;
+        }
+
+        .tab:hover:not(.active) {
+            background: #f8f8f8;
+        }
+
+        /* Container da planilha */
+        .spreadsheet-container {
+            background: white;
+            margin: 15px;
+            border: 1px solid #d4d4d4;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        /* Tabela estilo Excel */
+        .spreadsheet {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 1200px;
+        }
+
+        .spreadsheet th {
+            background: #217346;
+            color: white;
+            font-weight: 600;
+            padding: 8px;
+            border: 1px solid #1a5c37;
+            text-align: left;
+            font-size: 11px;
             position: sticky;
             top: 0;
         }
-        
-        td {
-            padding: 8px 12px;
-            border-bottom: 1px solid var(--border);
-            font-family: var(--font-mono);
-            font-size: 12px;
-        }
-        
-        tr:hover td { background: rgba(255,255,255,0.05); }
 
-        /* Inputs */
-        input, select {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            padding: 6px;
-            border-radius: 3px;
-            font-family: var(--font-mono);
+        .spreadsheet td {
+            border: 1px solid #d4d4d4;
+            padding: 6px 8px;
+            font-size: 11px;
         }
 
-        .btn {
-            background: var(--accent);
-            color: #fff;
+        .spreadsheet tr:nth-child(even) {
+            background: #f8f9f8;
+        }
+
+        .spreadsheet tr:hover {
+            background: #e8f5e9;
+        }
+
+        /* Inputs estilo célula Excel */
+        .cell-input {
+            width: 100%;
             border: none;
-            padding: 6px 12px;
-            border-radius: 3px;
-            cursor: pointer;
+            background: transparent;
+            font-size: 11px;
+            font-family: inherit;
+            padding: 2px;
+        }
+
+        .cell-input:focus {
+            outline: 2px solid #217346;
+            background: white;
+        }
+
+        .cell-number {
+            text-align: right;
+        }
+
+        .cell-center {
+            text-align: center;
+        }
+
+        /* Cores de status */
+        .positive {
+            color: #0f7b0f;
             font-weight: 600;
         }
-        .btn:hover { opacity: 0.9; }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
 
-        /* Risk Bars */
-        .risk-bar-bg { width: 100px; height: 6px; background: var(--bg); border-radius: 3px; display: inline-block; vertical-align: middle; }
-        .risk-bar-fill { height: 100%; border-radius: 3px; }
+        .negative {
+            color: #c50f1f;
+            font-weight: 600;
+        }
 
-        /* Utility */
-        .flex-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .chart-container { height: 300px; width: 100%; }
+        .neutral {
+            color: #666;
+        }
+
+        /* Fórmula bar */
+        .formula-bar {
+            background: white;
+            border-bottom: 1px solid #d4d4d4;
+            padding: 8px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .formula-label {
+            color: #666;
+            font-weight: 600;
+            min-width: 30px;
+        }
+
+        .formula-input {
+            flex: 1;
+            border: 1px solid #d4d4d4;
+            padding: 4px 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+        }
+
+        /* Stats summary */
+        .summary-box {
+            background: #f8f9f8;
+            border: 1px solid #d4d4d4;
+            padding: 15px;
+            margin: 15px;
+            border-radius: 4px;
+        }
+
+        .summary-title {
+            color: #217346;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .summary-label {
+            color: #666;
+        }
+
+        .summary-value {
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Abas content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Coluna específica widths */
+        .col-dex { width: 120px; }
+        .col-pair { width: 150px; }
+        .col-contribution { width: 100px; }
+        .col-value { width: 100px; }
+        .col-date { width: 100px; }
+        .col-range { width: 80px; }
+        .col-fees { width: 100px; }
+        .col-ro { width: 80px; }
+        .col-il { width: 150px; }
+        .col-balance { width: 100px; }
+        .col-withdrawal { width: 100px; }
+        .col-obs { width: 200px; }
+
+        /* Botão adicionar linha */
+        .add-row {
+            background: #e8f5e9;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            color: #217346;
+            font-weight: 600;
+            border: 1px dashed #217346;
+        }
+
+        .add-row:hover {
+            background: #c8e6c9;
+        }
+
+        /* Filtros */
+        .filter-row {
+            background: #f0f0f0;
+        }
+
+        .filter-row input, .filter-row select {
+            width: 100%;
+            border: 1px solid #ccc;
+            padding: 4px;
+            font-size: 11px;
+        }
     </style>
 </head>
 <body>
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="toolbar-title">💰 Liquidity Pool Manager</div>
+        <div class="toolbar-buttons">
+            <button class="btn-excel" onclick="addNewRow()">+ Nova Linha</button>
+            <button class="btn-excel" onclick="calculateAll()">📊 Calcular</button>
+            <button class="btn-excel" onclick="exportToExcel()">📥 Exportar Excel</button>
+            <button class="btn-excel" onclick="saveData()">💾 Salvar</button>
+        </div>
+    </div>
 
-<div class="container">
-    <!-- Navigation Tabs -->
+    <!-- Tabs -->
     <div class="tabs">
-        <div class="tab active" onclick="switchTab('dashboard')">1. DASHBOARD</div>
-        <div class="tab" onclick="switchTab('pools')">2. POOLS DATA</div>
-        <div class="tab" onclick="switchTab('risk')">3. RISK MATRIX</div>
-        <div class="tab" onclick="switchTab('il')">4. IL CALCULATOR</div>
-        <div class="tab" onclick="switchTab('backtest')">5. BACKTESTING</div>
+        <div class="tab active" onclick="switchTab('pulse')">PULSE</div>
+        <div class="tab" onclick="switchTab('report')">REPORT</div>
+        <div class="tab" onclick="switchTab('analytics')">ANALYTICS</div>
     </div>
 
-    <!-- TAB 1: DASHBOARD -->
-    <div id="dashboard" class="content active">
-        <div class="flex-row">
-            <h2>Executive Summary</h2>
-            <div>
-                <button class="btn" onclick="exportData()">Export XLSX</button>
-                <button class="btn btn-outline" onclick="saveState()">Save Local</button>
-                <button class="btn btn-outline" onclick="clearData()">Reset</button>
-            </div>
-        </div>
-
-        <div class="grid-kpi">
-            <div class="card">
-                <div class="card-title">Total NAV (Net Asset Value)</div>
-                <div class="card-value" id="kpi-nav">$0.00</div>
-                <div class="card-sub" id="kpi-nav-change">+0.00%</div>
-            </div>
-            <div class="card">
-                <div class="card-title">Realized PnL</div>
-                <div class="card-value pos" id="kpi-pnl">$0.00</div>
-                <div class="card-sub">Cumulative</div>
-            </div>
-            <div class="card">
-                <div class="card-title">Sharpe Ratio (30d)</div>
-                <div class="card-value" id="kpi-sharpe">0.00</div>
-                <div class="card-sub">Risk Free: 2%</div>
-            </div>
-            <div class="card">
-                <div class="card-title">Max Drawdown</div>
-                <div class="card-value neg" id="kpi-drawdown">0.00%</div>
-                <div class="card-sub">Peak to Trough</div>
-            </div>
-            <div class="card">
-                <div class="card-title">Weighted APY</div>
-                <div class="card-value" id="kpi-apy">0.00%</div>
-                <div class="card-sub">Annualized</div>
-            </div>
-            <div class="card">
-                <div class="card-title">Active Pools</div>
-                <div class="card-value" id="kpi-count">0</div>
-                <div class="card-sub">Multi-chain</div>
-            </div>
-        </div>
-
-        <div class="grid-kpi" style="grid-template-columns: 2fr 1fr;">
-            <div class="card">
-                <div class="card-title">Equity Curve (Daily NAV)</div>
-                <div class="chart-container">
-                    <canvas id="equityChart"></canvas>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-title">Exposure by Chain</div>
-                <div class="chart-container">
-                    <canvas id="chainChart"></canvas>
-                </div>
-            </div>
-        </div>
+    <!-- Formula Bar -->
+    <div class="formula-bar">
+        <span class="formula-label">fx</span>
+        <input type="text" class="formula-input" id="formulaInput" placeholder="Selecione uma célula para ver a fórmula" readonly>
     </div>
 
-    <!-- TAB 2: POOLS DATA -->
-    <div id="pools" class="content">
-        <div class="flex-row">
-            <h2>Position Management</h2>
-            <button class="btn" onclick="addPoolRow()">+ Add Position</button>
-        </div>
-        <div class="table-wrapper">
-            <table id="poolsTable">
+    <!-- TAB PULSE -->
+    <div id="pulse" class="tab-content active">
+        <div class="spreadsheet-container">
+            <table class="spreadsheet" id="pulseTable">
                 <thead>
                     <tr>
-                        <th>Chain</th>
-                        <th>Protocol</th>
-                        <th>Pair</th>
-                        <th>Entry Price</th>
-                        <th>Current Price</th>
-                        <th>Invested</th>
-                        <th>Current Value</th>
-                        <th>Fees Earned</th>
-                        <th>IL Realized</th>
-                        <th>Net PnL</th>
-                        <th>Actions</th>
+                        <th class="col-dex">DEX</th>
+                        <th class="col-pair">PAR</th>
+                        <th class="col-contribution cell-number">NOVA CONTRIBUIÇÃO ($)</th>
+                        <th class="col-value cell-number">VALOR APLICADO ($)</th>
+                        <th class="col-date">INÍCIO</th>
+                        <th class="col-range cell-number">RANGE (%)</th>
+                        <th class="col-fees cell-number">FEES ($)</th>
+                        <th class="col-ro cell-number">RO (%)</th>
+                        <th class="col-date">FIM</th>
+                        <th class="col-il">IMPERMANENT LOSS</th>
+                        <th class="col-balance cell-number">SALDO FINAL ($)</th>
+                        <th class="col-withdrawal cell-number">RETIRADA ($)</th>
+                        <th class="col-obs">OBSERVAÇÕES</th>
+                    </tr>
+                    <tr class="filter-row">
+                        <td><input type="text" placeholder="Filtrar DEX" onchange="filterTable()"></td>
+                        <td><input type="text" placeholder="Filtrar Par" onchange="filterTable()"></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
                     </tr>
                 </thead>
-                <tbody id="poolsBody">
-                    <!-- Rows injected by JS -->
+                <tbody id="pulseBody">
+                    <!-- Linhas serão inseridas via JavaScript -->
+                </tbody>
+            </table>
+            <div class="add-row" onclick="addNewRow()">+ ADICIONAR NOVA POOL</div>
+        </div>
+    </div>
+
+    <!-- TAB REPORT -->
+    <div id="report" class="tab-content">
+        <div class="summary-box">
+            <div class="summary-title">📊 RESUMO DO MÊS</div>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <span class="summary-label">Total em Fees:</span>
+                    <span class="summary-value positive" id="totalFees">$0.00</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Total Aplicado:</span>
+                    <span class="summary-value" id="totalApplied">$0.00</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">RO Médio:</span>
+                    <span class="summary-value" id="avgRO">0.00%</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Pools Ativas:</span>
+                    <span class="summary-value" id="activePools">0</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Total Retiradas:</span>
+                    <span class="summary-value negative" id="totalWithdrawals">$0.00</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Saldo Total:</span>
+                    <span class="summary-value" id="totalBalance">$0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="spreadsheet-container">
+            <table class="spreadsheet">
+                <thead>
+                    <tr>
+                        <th>DEX</th>
+                        <th>PAR</th>
+                        <th class="cell-number">VALOR APLICADO</th>
+                        <th class="cell-number">FEES</th>
+                        <th class="cell-number">RO (%)</th>
+                        <th class="cell-number">SALDO FINAL</th>
+                        <th>STATUS</th>
+                    </tr>
+                </thead>
+                <tbody id="reportBody">
+                    <!-- Relatório gerado automaticamente -->
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- TAB 3: RISK MATRIX -->
-    <div id="risk" class="content">
-        <h2>Risk Analytics</h2>
-        <div class="grid-kpi">
-            <div class="card">
-                <div class="card-title">Token Concentration (Top 1)</div>
-                <div class="card-value neg" id="risk-concentration">0%</div>
-                <div class="card-sub">Warning > 30%</div>
-            </div>
-            <div class="card">
-                <div class="card-title">Stablecoin Ratio</div>
-                <div class="card-value" id="risk-stable">0%</div>
-                <div class="card-sub">Safety buffer</div>
-            </div>
-            <div class="card">
-                <div class="card-title">Volatility (Annualized)</div>
-                <div class="card-value" id="risk-vol">0%</div>
-                <div class="card-sub">Realized</div>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-title">Risk Exposure Map</div>
-            <div class="table-wrapper" style="margin-top: 10px;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Token</th>
-                            <th>Total Value</th>
-                            <th>Portfolio %</th>
-                            <th>Risk Level</th>
-                        </tr>
-                    </thead>
-                    <tbody id="riskTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- TAB 4: IL CALCULATOR -->
-    <div id="il" class="content">
-        <div class="grid-kpi">
-            <div class="card">
-                <div class="card-title">Impermanent Loss Simulator</div>
-                <div style="margin-top: 15px;">
-                    <label>Token A Price Entry ($)</label><br>
-                    <input type="number" id="il-entry" value="100" style="width: 100%; margin-bottom: 10px;" oninput="calcIL()"><br>
-                    <label>Token A Price Current ($)</label><br>
-                    <input type="number" id="il-current" value="150" style="width: 100%; margin-bottom: 10px;" oninput="calcIL()"><br>
-                    <label>Investment Value ($)</label><br>
-                    <input type="number" id="il-amount" value="1000" style="width: 100%; margin-bottom: 10px;" oninput="calcIL()">
+    <!-- TAB ANALYTICS -->
+    <div id="analytics" class="tab-content">
+        <div class="summary-box">
+            <div class="summary-title">📈 MÉTRICAS AVANÇADAS</div>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <span class="summary-label">Melhor Pool (RO):</span>
+                    <span class="summary-value positive" id="bestPool">-</span>
                 </div>
-            </div>
-            <div class="card">
-                <div class="card-title">Results</div>
-                <div style="margin-top: 15px;">
-                    <div>HODL Value: <span class="pos" id="il-hodl" style="float: right;">$0</span></div>
-                    <div>LP Value: <span class="warning" id="il-lp" style="float: right;">$0</span></div>
-                    <hr style="border-color: var(--border); margin: 10px 0;">
-                    <div style="font-weight: bold;">IL Loss: <span class="neg" id="il-loss" style="float: right;">0%</span></div>
-                    <div style="font-size: 11px; color: var(--text-secondary); margin-top: 10px;">
-                        *Formula: 2*sqrt(P_current/P_entry)/(1+P_current/P_entry) - 1
-                    </div>
+                <div class="summary-item">
+                    <span class="summary-label">Pior Pool (RO):</span>
+                    <span class="summary-value negative" id="worstPool">-</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Total em IL:</span>
+                    <span class="summary-value negative" id="totalIL">-$0.00</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Lucro Líquido:</span>
+                    <span class="summary-value positive" id="netProfit">$0.00</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- TAB 5: BACKTESTING -->
-    <div id="backtest" class="content">
-        <h2>Simple Strategy Backtest</h2>
-        <div class="card">
-            <p style="color: var(--text-secondary); margin-bottom: 10px;">Simulate returns based on historical volatility assumptions.</p>
-            <div class="flex-row">
-                <div>
-                    <label>Initial Capital ($)</label>
-                    <input type="number" id="bt-capital" value="10000">
-                </div>
-                <div>
-                    <label>Annual APY (%)</label>
-                    <input type="number" id="bt-apy" value="20">
-                </div>
-                <div>
-                    <label>Days</label>
-                    <input type="number" id="bt-days" value="365">
-                </div>
-                <button class="btn" onclick="runBacktest()">Run Simulation</button>
-            </div>
-            <div class="chart-container" style="margin-top: 20px;">
-                <canvas id="backtestChart"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-/**
- * QUANT ENGINE CORE
- * Classes for Data Management and Mathematical Calculations
- */
-
-class DataManager {
-    constructor() {
-        this.pools = JSON.parse(localStorage.getItem('lp_pools')) || [];
-        this.history = JSON.parse(localStorage.getItem('lp_history')) || []; // Time series of NAV
-        this.init();
-    }
-
-    init() {
-        if (this.pools.length === 0) this.loadSampleData();
-        this.renderAll();
-    }
-
-    loadSampleData() {
-        this.pools = [
-            { id: 1, chain: 'Ethereum', protocol: 'Uniswap V3', pair: 'ETH/USDC', entry: 2000, current: 2150, invested: 10000, fees: 120, il: -150 },
-            { id: 2, chain: 'Arbitrum', protocol: 'GMX', pair: 'ARB/ETH', entry: 1.2, current: 1.15, invested: 5000, fees: 80, il: -200 },
-            { id: 3, chain: 'Base', protocol: 'Aerodrome', pair: 'USDC/USDbC', entry: 1, current: 1, invested: 20000, fees: 300, il: 0 }
+    <script>
+        // Dados iniciais de exemplo
+        let poolsData = [
+            { dex: 'Uniswap V3', pair: 'ETH/USDC', contribution: 5000, applied: 5000, start: '2024-01-15', range: 20, fees: 125, ro: 0, end: '', il: '0.0234 ETH', balance: 5125, withdrawal: 0, obs: 'Pool concentrada' },
+            { dex: 'PancakeSwap', pair: 'BNB/BUSD', contribution: 3000, applied: 3000, start: '2024-01-20', range: 15, fees: 89, ro: 0, end: '', il: '0.15 BNB', balance: 3089, withdrawal: 0, obs: '' },
+            { dex: 'Orca', pair: 'SOL/USDC', contribution: 2000, applied: 2000, start: '2024-02-01', range: 25, fees: 67, ro: 0, end: '', il: '1.2 SOL', balance: 2067, withdrawal: 0, obs: 'Alta volatilidade' }
         ];
-        this.save();
-    }
 
-    addPool(pool) {
-        pool.id = Date.now();
-        this.pools.push(pool);
-        this.save();
-        this.renderAll();
-    }
-
-    deletePool(id) {
-        this.pools = this.pools.filter(p => p.id !== id);
-        this.save();
-        this.renderAll();
-    }
-
-    updatePool(id, field, value) {
-        const pool = this.pools.find(p => p.id === id);
-        if (pool) {
-            pool[field] = value;
-            this.save();
-            this.renderAll();
-        }
-    }
-
-    save() {
-        localStorage.setItem('lp_pools', JSON.stringify(this.pools));
-        // Simulate adding a daily snapshot
-        this.history.push({ date: new Date().toISOString(), nav: this.calculateNAV() });
-        localStorage.setItem('lp_history', JSON.stringify(this.history));
-    }
-
-    calculateNAV() {
-        return this.pools.reduce((acc, p) => {
-            // Current Value = Invested * (Current Price / Entry Price) + Fees + IL (simplified logic)
-            // Note: Real math is more complex, this is for demo structure
-            const priceRatio = p.current / p.entry;
-            const tokenValue = p.invested * priceRatio; 
-            return acc + tokenValue + p.fees;
-        }, 0);
-    }
-
-    /**
-     * QUANT MATH: Sharpe Ratio
-     * Based on daily log returns from history
-     */
-    calculateSharpe() {
-        if (this.history.length < 30) return 0;
-        
-        // Get last 30 days
-        const slice = this.history.slice(-30).map(h => h.nav);
-        const returns = [];
-        
-        for (let i = 1; i < slice.length; i++) {
-            // Log Return: ln(P_t / P_t-1)
-            returns.push(Math.log(slice[i] / slice[i-1]));
+        // Carregar dados salvos
+        function loadData() {
+            const saved = localStorage.getItem('lp_pools_data');
+            if (saved) {
+                poolsData = JSON.parse(saved);
+            }
+            renderPulseTable();
+            updateReport();
+            updateAnalytics();
         }
 
-        const mean = returns.reduce((a, b) => a + b) / returns.length;
-        const variance = returns.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / returns.length;
-        const stdDev = Math.sqrt(variance);
+        // Salvar dados
+        function saveData() {
+            localStorage.setItem('lp_pools_data', JSON.stringify(poolsData));
+            alert('Dados salvos com sucesso!');
+        }
 
-        // Annualize
-        const annMean = mean * 365;
-        const annStdDev = stdDev * Math.sqrt(365);
+        // Renderizar tabela Pulse
+        function renderPulseTable() {
+            const tbody = document.getElementById('pulseBody');
+            tbody.innerHTML = '';
 
-        // Sharpe = (Mean - RiskFree) / StdDev
-        const riskFree = 0.02 / 365; // Daily risk free
-        return (mean - riskFree) / stdDev;
-    }
+            poolsData.forEach((pool, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="text" class="cell-input" value="${pool.dex}" onchange="updatePool(${index}, 'dex', this.value)"></td>
+                    <td><input type="text" class="cell-input" value="${pool.pair}" onchange="updatePool(${index}, 'pair', this.value)"></td>
+                    <td><input type="number" class="cell-input cell-number" value="${pool.contribution}" onchange="updatePool(${index}, 'contribution', parseFloat(this.value))"></td>
+                    <td><input type="number" class="cell-input cell-number" value="${pool.applied}" onchange="updatePool(${index}, 'applied', parseFloat(this.value))"></td>
+                    <td><input type="date" class="cell-input" value="${pool.start}" onchange="updatePool(${index}, 'start', this.value)"></td>
+                    <td><input type="number" class="cell-input cell-number" value="${pool.range}" onchange="updatePool(${index}, 'range', parseFloat(this.value))"></td>
+                    <td><input type="number" class="cell-input cell-number" value="${pool.fees}" onchange="updatePool(${index}, 'fees', parseFloat(this.value))"></td>
+                    <td class="cell-number ${getROClass(pool.ro)}">${pool.ro.toFixed(2)}%</td>
+                    <td><input type="date" class="cell-input" value="${pool.end}" onchange="updatePool(${index}, 'end', this.value)"></td>
+                    <td><input type="text" class="cell-input" value="${pool.il}" onchange="updatePool(${index}, 'il', this.value)"></td>
+                    <td class="cell-number">${pool.balance.toFixed(2)}</td>
+                    <td><input type="number" class="cell-input cell-number" value="${pool.withdrawal}" onchange="updatePool(${index}, 'withdrawal', parseFloat(this.value))"></td>
+                    <td><input type="text" class="cell-input" value="${pool.obs}" onchange="updatePool(${index}, 'obs', this.value)"></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
 
-    /**
-     * QUANT MATH: Max Drawdown
-     */
-    calculateMaxDrawdown() {
-        if (this.history.length === 0) return 0;
-        let peak = -Infinity;
-        let maxDD = 0;
+        // Atualizar pool
+        function updatePool(index, field, value) {
+            poolsData[index][field] = value;
+            
+            // Recalcular RO automaticamente
+            if (field === 'fees' || field === 'applied') {
+                calculateRO(index);
+            }
+            
+            updateReport();
+            updateAnalytics();
+        }
 
-        this.history.forEach(h => {
-            if (h.nav > peak) peak = h.nav;
-            const drawdown = (peak - h.nav) / peak;
-            if (drawdown > maxDD) maxDD = drawdown;
-        });
+        // Calcular RO
+        function calculateRO(index) {
+            const pool = poolsData[index];
+            if (pool.applied > 0) {
+                pool.ro = (pool.fees / pool.applied) * 100;
+            }
+            renderPulseTable();
+        }
 
-        return maxDD * 100;
-    }
+        // Calcular todos
+        function calculateAll() {
+            poolsData.forEach((pool, index) => {
+                calculateRO(index);
+            });
+            updateReport();
+            updateAnalytics();
+            alert('Cálculos realizados com sucesso!');
+        }
 
-    renderAll() {
-        renderDashboard(this);
-        renderPoolsTable(this);
-        renderRiskMatrix(this);
-    }
-}
+        // Adicionar nova linha
+        function addNewRow() {
+            poolsData.push({
+                dex: '',
+                pair: '',
+                contribution: 0,
+                applied: 0,
+                start: new Date().toISOString().split('T')[0],
+                range: 0,
+                fees: 0,
+                ro: 0,
+                end: '',
+                il: '',
+                balance: 0,
+                withdrawal: 0,
+                obs: ''
+            });
+            renderPulseTable();
+        }
 
-const manager = new DataManager();
+        // Atualizar Report
+        function updateReport() {
+            const reportBody = document.getElementById('reportBody');
+            reportBody.innerHTML = '';
 
-/**
- * UI RENDERERS
- */
+            let totalFees = 0;
+            let totalApplied = 0;
+            let totalRO = 0;
+            let activeCount = 0;
+            let totalWithdrawals = 0;
+            let totalBalance = 0;
 
-function renderDashboard(mgr) {
-    const nav = mgr.calculateNAV();
-    const pnl = nav - mgr.pools.reduce((acc, p) => acc + p.invested, 0);
-    const sharpe = mgr.calculateSharpe();
-    const dd = mgr.calculateMaxDrawdown();
-    const weightedApy = mgr.pools.reduce((acc, p) => acc + (p.fees/p.invested)*100, 0) / mgr.pools.length; // Simplified
+            poolsData.forEach(pool => {
+                totalFees += pool.fees;
+                totalApplied += pool.applied;
+                totalRO += pool.ro;
+                if (!pool.end) activeCount++;
+                totalWithdrawals += pool.withdrawal;
+                totalBalance += pool.balance;
 
-    document.getElementById('kpi-nav').textContent = `$${nav.toLocaleString()}`;
-    document.getElementById('kpi-pnl').textContent = `$${pnl.toLocaleString()}`;
-    document.getElementById('kpi-pnl').className = pnl >= 0 ? 'card-value pos' : 'card-value neg';
-    document.getElementById('kpi-sharpe').textContent = sharpe.toFixed(2);
-    document.getElementById('kpi-drawdown').textContent = `-${dd.toFixed(2)}%`;
-    document.getElementById('kpi-apy').textContent = `${weightedApy.toFixed(2)}%`;
-    document.getElementById('kpi-count').textContent = mgr.pools.length;
+                const tr = document.createElement('tr');
+                const status = pool.end ? '<span class="negative">FECHADA</span>' : '<span class="positive">ATIVA</span>';
+                tr.innerHTML = `
+                    <td>${pool.dex}</td>
+                    <td>${pool.pair}</td>
+                    <td class="cell-number">$${pool.applied.toFixed(2)}</td>
+                    <td class="cell-number ${pool.fees > 0 ? 'positive' : 'neutral'}">$${pool.fees.toFixed(2)}</td>
+                    <td class="cell-number ${getROClass(pool.ro)}">${pool.ro.toFixed(2)}%</td>
+                    <td class="cell-number">$${pool.balance.toFixed(2)}</td>
+                    <td class="cell-center">${status}</td>
+                `;
+                reportBody.appendChild(tr);
+            });
 
-    updateCharts(mgr);
-}
+            const avgRO = poolsData.length > 0 ? totalRO / poolsData.length : 0;
 
-function renderPoolsTable(mgr) {
-    const tbody = document.getElementById('poolsBody');
-    tbody.innerHTML = '';
+            document.getElementById('totalFees').textContent = `$${totalFees.toFixed(2)}`;
+            document.getElementById('totalApplied').textContent = `$${totalApplied.toFixed(2)}`;
+            document.getElementById('avgRO').textContent = `${avgRO.toFixed(2)}%`;
+            document.getElementById('activePools').textContent = activeCount;
+            document.getElementById('totalWithdrawals').textContent = `$${totalWithdrawals.toFixed(2)}`;
+            document.getElementById('totalBalance').textContent = `$${totalBalance.toFixed(2)}`;
+        }
 
-    mgr.pools.forEach(p => {
-        const priceRatio = p.current / p.entry;
-        const currentVal = p.invested * priceRatio;
-        const netPnL = (currentVal + p.fees) - p.invested;
-        const pnlClass = netPnL >= 0 ? 'pos' : 'neg';
+        // Atualizar Analytics
+        function updateAnalytics() {
+            if (poolsData.length === 0) return;
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><span style="color: var(--accent);">${p.chain}</span></td>
-            <td>${p.protocol}</td>
-            <td>${p.pair}</td>
-            <td>$${p.entry}</td>
-            <td><input type="number" value="${p.current}" style="width: 80px;" onchange="manager.updatePool(${p.id}, 'current', this.value)"></td>
-            <td>$${p.invested.toLocaleString()}</td>
-            <td>$${currentVal.toLocaleString()}</td>
-            <td class="pos">$${p.fees}</td>
-            <td class="neg">$${p.il}</td>
-            <td class="${pnlClass}">$${netPnL.toLocaleString()}</td>
-            <td><button class="btn-outline" onclick="manager.deletePool(${p.id})" style="border:none; cursor:pointer;">️</button></td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
+            const sortedByRO = [...poolsData].sort((a, b) => b.ro - a.ro);
+            const bestPool = sortedByRO[0];
+            const worstPool = sortedByRO[sortedByRO.length - 1];
 
-function renderRiskMatrix(mgr) {
-    // Calculate Token Concentration
-    const totalVal = mgr.pools.reduce((acc, p) => acc + (p.invested * (p.current/p.entry)), 0);
-    const tokenMap = {};
+            const totalIL = poolsData.reduce((acc, pool) => acc + pool.withdrawal, 0);
+            const netProfit = poolsData.reduce((acc, pool) => acc + pool.fees - pool.withdrawal, 0);
 
-    mgr.pools.forEach(p => {
-        const val = p.invested * (p.current/p.entry);
-        const tokens = p.pair.split('/');
-        tokens.forEach(t => {
-            if (!tokenMap[t]) tokenMap[t] = 0;
-            tokenMap[t] += val / 2; // Assume 50/50 split
-        });
-    });
+            document.getElementById('bestPool').textContent = `${bestPool.pair} (${bestPool.ro.toFixed(2)}%)`;
+            document.getElementById('worstPool').textContent = `${worstPool.pair} (${worstPool.ro.toFixed(2)}%)`;
+            document.getElementById('totalIL').textContent = `-$${totalIL.toFixed(2)}`;
+            document.getElementById('netProfit').textContent = `$${netProfit.toFixed(2)}`;
+        }
 
-    let maxTokenVal = 0;
-    let stableVal = 0;
-    const tbody = document.getElementById('riskTableBody');
-    tbody.innerHTML = '';
+        // Classe para RO
+        function getROClass(ro) {
+            if (ro > 5) return 'positive';
+            if (ro < 0) return 'negative';
+            return 'neutral';
+        }
 
-    for (const [token, val] of Object.entries(tokenMap)) {
-        const pct = (val / totalVal) * 100;
-        if (val > maxTokenVal) maxTokenVal = val;
-        if (token.includes('USDC') || token.includes('DAI') || token.includes('USDT')) stableVal += val;
+        // Filtrar tabela
+        function filterTable() {
+            // Implementação básica de filtro
+            const inputs = document.querySelectorAll('.filter-row input');
+            const dexFilter = inputs[0].value.toLowerCase();
+            const pairFilter = inputs[1].value.toLowerCase();
 
-        tbody.innerHTML += `
-            <tr>
-                <td>${token}</td>
-                <td>$${val.toLocaleString()}</td>
-                <td>${pct.toFixed(2)}%</td>
-                <td>${pct > 30 ? '<span style="color:var(--danger)">HIGH</span>' : '<span style="color:var(--success)">OK</span>'}</td>
-            </tr>
-        `;
-    }
+            const rows = document.querySelectorAll('#pulseBody tr');
+            rows.forEach(row => {
+                const dex = row.cells[0].querySelector('input').value.toLowerCase();
+                const pair = row.cells[1].querySelector('input').value.toLowerCase();
+                
+                if (dex.includes(dexFilter) && pair.includes(pairFilter)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
 
-    document.getElementById('risk-concentration').textContent = ((maxTokenVal / totalVal) * 100).toFixed(2) + '%';
-    document.getElementById('risk-stable').textContent = ((stableVal / totalVal) * 100).toFixed(2) + '%';
-    document.getElementById('risk-vol').textContent = '15.4%'; // Simulated
-}
+        // Trocar aba
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
 
-function addPoolRow() {
-    const chain = prompt("Chain (e.g. Ethereum):", "Ethereum");
-    const protocol = prompt("Protocol:", "Uniswap");
-    const pair = prompt("Pair:", "ETH/USDC");
-    const invested = parseFloat(prompt("Invested ($):", "1000"));
-    const entry = parseFloat(prompt("Entry Price:", "2000"));
-    const current = parseFloat(prompt("Current Price:", "2000"));
-
-    if (chain && pair && !isNaN(invested)) {
-        manager.addPool({
-            chain, protocol, pair, invested, entry, current, fees: 0, il: 0
-        });
-    }
-}
-
-/**
- * IL CALCULATOR
- */
-function calcIL() {
-    const entry = parseFloat(document.getElementById('il-entry').value);
-    const current = parseFloat(document.getElementById('il-current').value);
-    const amount = parseFloat(document.getElementById('il-amount').value);
-
-    if (!entry || !current || !amount) return;
-
-    const ratio = current / entry;
-    // IL Formula
-    const ilPct = (2 * Math.sqrt(ratio) / (1 + ratio)) - 1;
-    
-    const hodlVal = amount * ratio; // Simplified: assuming 100% in Token A for comparison
-    // LP Val calculation is complex, but IL % is the delta
-    const ilVal = hodlVal * ilPct;
-    const lpVal = hodlVal + ilVal;
-
-    document.getElementById('il-hodl').textContent = `$${hodlVal.toLocaleString()}`;
-    document.getElementById('il-lp').textContent = `$${lpVal.toLocaleString()}`;
-    document.getElementById('il-loss').textContent = `${(ilPct * 100).toFixed(2)}%`;
-}
-
-/**
- * BACKTESTING
- */
-function runBacktest() {
-    const capital = parseFloat(document.getElementById('bt-capital').value);
-    const apy = parseFloat(document.getElementById('bt-apy').value) / 100;
-    const days = parseInt(document.getElementById('bt-days').value);
-    
-    const dailyRate = apy / 365;
-    const data = [];
-    const labels = [];
-    let currentVal = capital;
-
-    for (let i = 0; i <= days; i++) {
-        currentVal = currentVal * (1 + dailyRate);
-        data.push(currentVal);
-        if (i % 30 === 0) labels.push(`Day ${i}`);
-    }
-
-    const ctx = document.getElementById('backtestChart').getContext('2d');
-    if (window.btChart) window.btChart.destroy();
-    
-    window.btChart = new Chart(ctx, {
-        type: 'line',
-         {
-            labels: labels,
-            datasets: [{
-                label: 'Projected NAV',
-                 data,
-                borderColor: '#3fb950',
-                borderWidth: 2,
-                tension: 0.1,
-                pointRadius: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } },
-                y: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } }
+            if (tabName === 'report') {
+                updateReport();
+            } else if (tabName === 'analytics') {
+                updateAnalytics();
             }
         }
-    });
-}
 
-/**
- * CHARTS & UTILS
- */
-let equityChartInstance = null;
-let chainChartInstance = null;
-
-function updateCharts(mgr) {
-    // Equity Chart
-    const ctx1 = document.getElementById('equityChart').getContext('2d');
-    if (equityChartInstance) equityChartInstance.destroy();
-
-    equityChartInstance = new Chart(ctx1, {
-        type: 'line',
-         {
-            labels: mgr.history.map(h => new Date(h.date).toLocaleDateString()),
-            datasets: [{
-                label: 'NAV',
-                 mgr.history.map(h => h.nav),
-                borderColor: '#58a6ff',
-                borderWidth: 2,
-                tension: 0.1,
-                pointRadius: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { display: false },
-                y: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } }
-            }
+        // Exportar para Excel
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // Planilha Pulse
+            const pulseData = poolsData.map(pool => ({
+                'DEX': pool.dex,
+                'PAR': pool.pair,
+                'NOVA CONTRIBUIÇÃO ($)': pool.contribution,
+                'VALOR APLICADO ($)': pool.applied,
+                'INÍCIO': pool.start,
+                'RANGE (%)': pool.range,
+                'FEES ($)': pool.fees,
+                'RO (%)': pool.ro.toFixed(2),
+                'FIM': pool.end,
+                'IMPERMANENT LOSS': pool.il,
+                'SALDO FINAL ($)': pool.balance.toFixed(2),
+                'RETIRADA ($)': pool.withdrawal,
+                'OBSERVAÇÕES': pool.obs
+            }));
+            
+            const wsPulse = XLSX.utils.json_to_sheet(pulseData);
+            XLSX.utils.book_append_sheet(wb, wsPulse, "PULSE");
+            
+            // Planilha Report
+            const reportData = poolsData.map(pool => ({
+                'DEX': pool.dex,
+                'PAR': pool.pair,
+                'VALOR APLICADO': pool.applied,
+                'FEES': pool.fees,
+                'RO (%)': pool.ro.toFixed(2),
+                'SALDO FINAL': pool.balance.toFixed(2),
+                'STATUS': pool.end ? 'FECHADA' : 'ATIVA'
+            }));
+            
+            const wsReport = XLSX.utils.json_to_sheet(reportData);
+            XLSX.utils.book_append_sheet(wb, wsReport, "REPORT");
+            
+            XLSX.writeFile(wb, `Liquidity_Pools_${new Date().toISOString().split('T')[0]}.xlsx`);
         }
-    });
 
-    // Chain Chart (Doughnut)
-    const chainData = {};
-    mgr.pools.forEach(p => {
-        const val = p.invested * (p.current/p.entry);
-        chainData[p.chain] = (chainData[p.chain] || 0) + val;
-    });
-
-    const ctx2 = document.getElementById('chainChart').getContext('2d');
-    if (chainChartInstance) chainChartInstance.destroy();
-
-    chainChartInstance = new Chart(ctx2, {
-        type: 'doughnut',
-         {
-            labels: Object.keys(chainData),
-            datasets: [{
-                 Object.values(chainData),
-                backgroundColor: ['#58a6ff', '#3fb950', '#d29922', '#f85149', '#bc8cff'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'right', labels: { color: '#8b949e' } } }
-        }
-    });
-}
-
-function switchTab(tabId) {
-    document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
-    event.target.classList.add('active');
-}
-
-function saveState() {
-    manager.save();
-    alert('State saved to LocalStorage');
-}
-
-function clearData() {
-    if (confirm('Clear all data?')) {
-        localStorage.clear();
-        location.reload();
-    }
-}
-
-function exportData() {
-    const wb = XLSX.utils.book_new();
-    
-    // Pools Sheet
-    const wsPools = XLSX.utils.json_to_sheet(manager.pools);
-    XLSX.utils.book_append_sheet(wb, wsPools, "Pools");
-    
-    // History Sheet
-    const wsHist = XLSX.utils.json_to_sheet(manager.history);
-    XLSX.utils.book_append_sheet(wb, wsHist, "History");
-
-    XLSX.writeFile(wb, "LP_Quant_Report.xlsx");
-}
-
-// Initialize
-window.onload = function() {
-    renderAll(); // Render initial state
-    calcIL(); // Init calculator
-};
-</script>
-
+        // Inicializar
+        window.onload = function() {
+            loadData();
+        };
+    </script>
 </body>
 </html>
