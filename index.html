@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liquidity Pool Manager</title>
+    <title>LP Manager Pro - DefiLlama Integration</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -12,381 +13,1313 @@
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f0f0f0;
-            font-size: 11px;
-            overflow-x: auto;
+        :root {
+            --primary: #217346;
+            --primary-dark: #1a5c37;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --border: #dadce0;
+            --text: #202124;
+            --text-secondary: #5f6368;
         }
 
-        /* Toolbar Superior */
-        .toolbar {
-            background: #217346;
+        body {
+            font-family: 'Segoe UI', Roboto, 'Google Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* Header */
+        .header {
+            background: var(--primary);
             color: white;
-            padding: 8px 15px;
+            padding: 12px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 3px solid #1a5c37;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
-        .toolbar-title {
-            font-size: 16px;
+        .header-title {
+            font-size: 18px;
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .toolbar-buttons {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-toolbar {
-            background: white;
-            color: #217346;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 11px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: background 0.2s;
-        }
-
-        .btn-toolbar:hover {
-            background: #f5f5f5;
-        }
-
-        /* Tabs */
-        .tabs {
-            background: #f8f9fa;
-            border-bottom: 1px solid #dadce0;
-            display: flex;
-            padding: 0 10px;
-            gap: 2px;
-        }
-
-        .tab {
-            padding: 10px 24px;
-            background: #e8eaed;
-            border: 1px solid #dadce0;
-            border-bottom: none;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 12px;
-            border-radius: 4px 4px 0 0;
-            margin-bottom: -1px;
-            color: #5f6368;
-        }
-
-        .tab.active {
-            background: white;
-            color: #217346;
-            font-weight: 600;
-            border-bottom: 1px solid white;
-        }
-
-        .tab:hover:not(.active) {
-            background: #f1f3f4;
-        }
-
-        /* Formula Bar */
-        .formula-bar {
-            background: white;
-            border-bottom: 1px solid #dadce0;
-            padding: 6px 10px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .formula-label {
-            color: #5f6368;
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
             font-weight: 600;
-            font-style: italic;
-            min-width: 20px;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
         }
 
-        .formula-input {
-            flex: 1;
-            border: 1px solid #dadce0;
-            padding: 4px 8px;
-            font-size: 11px;
-            font-family: inherit;
-            background: #f8f9fa;
-        }
-
-        /* Container Principal */
-        .spreadsheet-container {
+        .btn-white {
             background: white;
-            margin: 15px;
-            border: 1px solid #dadce0;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            color: var(--primary);
+        }
+
+        .btn-white:hover {
+            background: #f1f3f4;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        /* Tabs */
+        .tabs {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            padding: 0 20px;
+            gap: 2px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: #f8f9fa;
+            border: 1px solid var(--border);
+            border-bottom: none;
+            cursor: pointer;
+            font-weight: 500;
+            border-radius: 4px 4px 0 0;
+            margin-bottom: -1px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background: #e8eaed;
+        }
+
+        .tab.active {
+            background: white;
+            color: var(--primary);
+            font-weight: 600;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 8px;
+        }
+
+        .kpi-change {
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .positive { color: var(--success); }
+        .negative { color: var(--danger); }
+
+        /* Cards */
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Auto Import Section */
+        .import-section {
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .import-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .import-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .import-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .import-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(33, 115, 70, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        /* Table */
+        .table-container {
             overflow-x: auto;
         }
 
-        /* Tabela */
-        .spreadsheet {
-            border-collapse: collapse;
+        .data-table {
             width: 100%;
-            min-width: 1400px;
-            font-size: 11px;
+            border-collapse: collapse;
+            font-size: 12px;
         }
 
-        .spreadsheet th {
-            background: #217346;
+        .data-table th {
+            background: var(--primary);
             color: white;
             font-weight: 600;
-            padding: 10px 8px;
-            border: 1px solid #1a5c37;
+            padding: 12px 8px;
             text-align: left;
-            font-size: 11px;
+            border: 1px solid var(--primary-dark);
             white-space: nowrap;
         }
 
-        .spreadsheet td {
-            border: 1px solid #e0e0e0;
-            padding: 6px 8px;
-            font-size: 11px;
+        .data-table td {
+            padding: 10px 8px;
+            border: 1px solid var(--border);
+            background: white;
         }
 
-        .spreadsheet tr:nth-child(even) {
+        .data-table tr:nth-child(even) td {
             background: #f8f9f8;
         }
 
-        .spreadsheet tr:hover {
+        .data-table tr:hover td {
             background: #e8f5e9;
         }
 
-        /* Inputs nas células */
         .cell-input {
             width: 100%;
             border: none;
             background: transparent;
-            font-size: 11px;
+            font-size: 12px;
             font-family: inherit;
-            padding: 2px;
+            padding: 4px;
         }
 
         .cell-input:focus {
-            outline: 2px solid #217346;
+            outline: 2px solid var(--primary);
             background: white;
-            position: relative;
-            z-index: 10;
         }
 
         .cell-number {
             text-align: right;
+            font-family: 'Courier New', monospace;
         }
 
-        .cell-center {
-            text-align: center;
-        }
-
-        /* Cores de status */
-        .positive {
-            color: #0f7b0f;
-            font-weight: 600;
-        }
-
-        .negative {
-            color: #c50f1f;
-            font-weight: 600;
-        }
-
-        /* Linha de Filtros */
-        .filter-row td {
-            background: #f8f9fa;
+        /* Badges */
+        .badge {
+            display: inline-flex;
             padding: 4px 8px;
-        }
-
-        .filter-input {
-            width: 100%;
-            border: 1px solid #dadce0;
-            padding: 4px;
+            border-radius: 4px;
             font-size: 10px;
-            border-radius: 2px;
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
-        /* Botão Adicionar */
-        .add-row {
-            background: #e8f5e9;
-            text-align: center;
-            padding: 12px;
+        .badge-success {
+            background: #d4edAnalisando o vídeo, vejo que é uma planilha de gestão de LPs mais avançada. Vou criar uma versão **profissional e automatizada** com integração de APIs em tempo real.
+
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP Manager Pro - DefiLlama Integration</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #217346;
+            --primary-dark: #1a5c37;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --border: #dadce0;
+            --text: #202124;
+            --text-secondary: #5f6368;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, 'Google Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* Header */
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
             cursor: pointer;
-            color: #217346;
             font-weight: 600;
-            border: 1px dashed #217346;
-            border-top: none;
-            transition: background 0.2s;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
         }
 
-        .add-row:hover {
-            background: #c8e6c9;
+        .btn-white {
+            background: white;
+            color: var(--primary);
         }
 
-        /* Resumo */
-        .summary-row {
-            background: #f1f8e9;
+        .btn-white:hover {
+            background: #f1f3f4;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        /* Tabs */
+        .tabs {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            padding: 0 20px;
+            gap: 2px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: #f8f9fa;
+            border: 1px solid var(--border);
+            border-bottom: none;
+            cursor: pointer;
+            font-weight: 500;
+            border-radius: 4px 4px 0 0;
+            margin-bottom: -1px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background: #e8eaed;
+        }
+
+        .tab.active {
+            background: white;
+            color: var(--primary);
             font-weight: 600;
+            border-bottom: 2px solid var(--primary);
         }
 
-        .summary-row td {
-            border-top: 2px solid #217346;
-            padding: 8px;
+        /* Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
-        /* Responsivo */
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 8px;
+        }
+
+        .kpi-change {
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .positive { color: var(--success); }
+        .negative { color: var(--danger); }
+
+        /* Cards */
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Auto Import Section */
+        .import-section {
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .import-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .import-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .import-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .import-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(33, 115, 70, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .data-table th {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            padding: 12px 8px;
+            text-align: left;
+            border: 1px solid var(--primary-dark);
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 10px 8px;
+            border: 1px solid var(--border);
+            background: white;
+        }
+
+        .data-table tr:nth-child(even) td {
+            background: #f8f9f8;
+        }
+
+        .data-table tr:hover td {
+            background: #e8f5e9;
+        }
+
+        .cell-input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-size: 12px;
+            font-family: inherit;
+            padding: 4px;
+        }
+
+        .cell-input:focus {
+            outline: 2px solid var(--primary);
+            background: white;
+        }
+
+        .cell-number {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .spinner-overlay.show {
+            display: flex;
+        }
+
+        .spinner-content {
+            background: white;
+            padding: 32px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        /* Charts */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
-            .toolbar {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
+            .form-row {
+                grid-template-columns: 1fr;
             }
             
-            .toolbar-buttons {
-                flex-wrap: wrap;
-                justify-content: center;
+            .chart-grid {
+                grid-template-columns: 1fr;
             }
             
-            .spreadsheet-container {
-                margin: 5px;
+            .kpi-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Toolbar -->
-    <div class="toolbar">
-        <div class="toolbar-title">
-            💰 Liquidity Pool Manager
-        </div>
-        <div class="toolbar-buttons">
-            <button class="btn-toolbar" onclick="addNewRow()">
-                <span>+</span> Nova Linha
-            </button>
-            <button class="btn-toolbar" onclick="calculateAll()">
-                <span>📊</span> Calcular
-            </button>
-            <button class="btn-toolbar" onclick="exportToExcel()">
-                <span>📥</span> Exportar Excel
-            </button>
-            <button class="btn-toolbar" onclick="saveData()">
-                <span>💾</span> Salvar
-            </button>
+    <!-- Loading Overlay -->
+    <div class="spinner-overlay" id="loadingOverlay">
+        <div class="spinner-content">
+            <div class="loading" style="width: 50px; height: 50px; border-width: 4px; margin-bottom: 16px;"></div>
+            <div style="font-weight: 600; color: var(--text);">Sincronizando com DefiLlama...</div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">Importando dados em tempo real</div>
         </div>
     </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-title">
+            💰 LP Manager Pro
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-white" onclick="refreshAll()">
+                🔄 Atualizar
+            </button>
+            <button class="btn btn-white" onclick="exportToExcel()">
+                📥 Exportar Excel
+            </button>
+            <button class="btn btn-white" onclick="saveData()">
+                💾 Salvar
+            </button>
+        </div>
+    </header>
 
     <!-- Tabs -->
     <div class="tabs">
-        <div class="tab active">PULSE</div>
-        <div class="tab">REPORT</div>
-        <div class="tab">ANALYTICS</div>
+        <div class="tab active" onclick="switchTab('dashboard')">📊 DASHBOARD</div>
+        <div class="tab" onclick="switchTab('auto-import')">🔗 AUTO IMPORT</div>
+        <div class="tab" onclick="switchTab('pools')">📋 POOLS</div>
+        <div class="tab" onclick="switchTab('analytics')">📈 ANALYTICS</div>
     </div>
 
-    <!-- Formula Bar -->
-    <div class="formula-bar">
-        <span class="formula-label">fx</span>
-        <input type="text" class="formula-input" placeholder="Selecione uma célula para ver a fórmula" readonly>
-    </div>
+    <div class="container">
+        <!-- DASHBOARD TAB -->
+        <div id="dashboard" class="tab-content active">
+            <!-- KPIs -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Value Locked</div>
+                    <div class="kpi-value" id="kpiTVL">$0</div>
+                    <div class="kpi-change positive" id="kpiTVLChange">
+                        ↑ 0.00%
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Total em Fees</div>
+                    <div class="kpi-value positive" id="kpiFees">$0</div>
+                    <div class="kpi-change">
+                        Acumulado
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">ROI Médio</div>
+                    <div class="kpi-value" id="kpiROI">0.00%</div>
+                    <div class="kpi-change" id="kpiROIChange">
+                        -
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Pools Ativas</div>
+                    <div class="kpi-value" id="kpiPools">0</div>
+                    <div class="kpi-change">
+                        Monitoradas
+                    </div>
+                </div>
+            </div>
 
-    <!-- Planilha -->
-    <div class="spreadsheet-container">
-        <table class="spreadsheet" id="mainTable">
-            <thead>
-                <tr>
-                    <th>DEX</th>
-                    <th>PAR</th>
-                    <th>NOVA CONTRIBUIÇÃO ($)</th>
-                    <th>VALOR APLICADO ($)</th>
-                    <th>INÍCIO</th>
-                    <th>RANGE (%)</th>
-                    <th>FEES ($)</th>
-                    <th>RO (%)</th>
-                    <th>FIM</th>
-                    <th>IMPERMANENT LOSS</th>
-                    <th>SALDO FINAL ($)</th>
-                </tr>
-                <tr class="filter-row">
-                    <td><input type="text" class="filter-input" placeholder="Filtrar DEX"></td>
-                    <td><input type="text" class="filter-input" placeholder="Filtrar Par"></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
-                <!-- Dados serão inseridos via JavaScript -->
-            </tbody>
-            <tfoot>
-                <tr class="summary-row">
-                    <td colspan="3" style="text-align: right;">TOTAIS:</td>
-                    <td class="cell-number" id="totalApplied">$0</td>
-                    <td></td>
-                    <td></td>
-                    <td class="cell-number positive" id="totalFees">$0</td>
-                    <td class="cell-number" id="avgRO">0.00%</td>
-                    <td></td>
-                    <td></td>
-                    <td class="cell-number" id="totalBalance">$0</td>
-                </tr>
-            </tfoot>
-        </table>
-        <div class="add-row" onclick="addNewRow()">
-            + ADICIONAR NOVA POOL
+            <!-- Charts -->
+            <div class="chart-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Evolução do TVL</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="tvlChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Distribuição por Chain</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chainChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AUTO IMPORT TAB -->
+        <div id="auto-import" class="tab-content">
+            <div class="import-section">
+                <div class="import-header">
+                    <div class="import-icon">🔗</div>
+                    <div>
+                        <div class="import-title">Importação Automática via API</div>
+                        <div class="import-subtitle">Conecte-se ao DefiLlama e DexScreener para dados em tempo real</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>💡 Dica:</strong> Cole o link do seu projeto no DefiLlama ou o endereço do contrato para importar automaticamente TVL, APY, volume e métricas.
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">URL DefiLlama ou Contrato</label>
+                        <input type="text" class="form-input" id="projectUrl" 
+                               placeholder="https://defillama.com/protocol/... ou 0x...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Blockchain</label>
+                        <select class="form-input" id="blockchain">
+                            <option value="ethereum">Ethereum</option>
+                            <option value="bsc">BNB Smart Chain</option>
+                            <option value="polygon">Polygon</option>
+                            <option value="arbitrum">Arbitrum</option>
+                            <option value="base">Base</option>
+                            <option value="avalanche">Avalanche</option>
+                            <option value="optimism">Optimism</option>
+                            <option value="solana">Solana</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Nome do Projeto/Pool</label>
+                        <input type="text" class="form-input" id="projectName" 
+                               placeholder="Ex: Uniswap V3 ETH/USDC">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Valor Investido ($)</label>
+                        <input type="number" class="form-input" id="investedAmount" 
+                               placeholder="0.00" step="0.01">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="importFromAPI()" style="width: 100%; padding: 12px;">
+                    🔍 Buscar Dados Automáticos
+                </button>
+            </div>
+
+            <!-- Preview dos dados importados -->
+            <div id="importPreview" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📊 Dados Encontrados</div>
+                    </div>
+                    <div class="card-body">
+                        <div id="previewContent"></div>
+                        <button class="btn btn-success" onclick="confirmImport()" style="margin-top: 16px;">
+                            ✅ Confirmar Importação
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- POOLS TAB -->
+        <div id="pools" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">📋 Gerenciamento de Pools de Liquidez</div>
+                    <button class="btn btn-primary" onclick="addNewRow()">
+                        + Nova Pool
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>DEX</th>
+                                    <th>Rede</th>
+                                    <th>Par</th>
+                                    <th>Valor Aplicado ($)</th>
+                                    <th>Taxa Receita/Mês ($)</th>
+                                    <th>Saques ($)</th>
+                                    <th>Saldo Final ($)</th>
+                                    <th>Diferença ($)</th>
+                                    <th>Impacto (%)</th>
+                                    <th>ROI (%)</th>
+                                    <th>Diário (%)</th>
+                                    <th>APY (%)</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="poolsTableBody">
+                                <!-- Dynamic content -->
+                            </tbody>
+                            <tfoot>
+                                <tr style="background: #e8f5e9; font-weight: 600;">
+                                    <td colspan="3" style="text-align: right;">TOTAIS:</td>
+                                    <td class="cell-number" id="totalApplied">$0</td>
+                                    <td class="cell-number" id="totalFees">$0</td>
+                                    <td class="cell-number" id="totalWithdrawals">$0</td>
+                                    <td class="cell-number" id="totalBalance">$0</td>
+                                    <td class="cell-number" id="totalDiff">$0</td>
+                                    <td class="cell-number" id="avgImpact">0%</td>
+                                    <td class="cell-number" id="avgROI">0%</td>
+                                    <td class="cell-number" id="avgDaily">0%</td>
+                                    <td class="cell-number" id="avgAPY">0%</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANALYTICS TAB -->
+        <div id="analytics" class="tab-content">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Melhor Pool (ROI)</div>
+                    <div class="kpi-value positive" id="bestPool">-</div>
+                    <div class="kpi-change">Performance</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Pior Pool (ROI)</div>
+                    <div class="kpi-value negative" id="worstPool">-</div>
+                    <div class="kpi-change">Performance</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Impermanent Loss Total</div>
+                    <div class="kpi-value negative" id="totalIL">-$0</div>
+                    <div class="kpi-change">Estimado</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Lucro Líquido</div>
+                    <div class="kpi-value" id="netProfit">$0</div>
+                    <div class="kpi-change">Realizado</div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Dados iniciais (exatamente como no vídeo)
-        let poolsData = [
-            { dex: 'Uniswap V3', pair: 'ETH/USDC', contribution: 5000, applied: 5000, start: '15/01/2024', range: 20, fees: 125, ro: 0, end: '', il: '0.0234 ETH', balance: 5125.00 },
-            { dex: 'PancakeSwap', pair: 'BNB/BUSD', contribution: 3000, applied: 3000, start: '20/01/2024', range: 15, fees: 89, ro: 0, end: '', il: '0.15 BNB', balance: 3089.00 },
-            { dex: 'Orca', pair: 'SOL/USDC', contribution: 2000, applied: 2000, start: '01/02/2024', range: 25, fees: 67, ro: 0, end: '', il: '1.2 SOL', balance: 2067.00 }
-        ];
+        // State
+        let poolsData = JSON.parse(localStorage.getItem('lp_pools')) || [];
+        let importedData = null;
+        let charts = {};
 
-        // Carregar dados salvos
-        function loadData() {
-            const saved = localStorage.getItem('lp_pools_data');
-            if (saved) {
-                poolsData = JSON.parse(saved);
+        // APIs
+        const APIS = {
+            defillama: 'https://api.llama.fi',
+            dexscreener: 'https://api.dexscreener.com/latest/dex',
+            coingecko: 'https://api.coingecko.com/api/v3'
+        };
+
+        // Initialize
+        window.onload = function() {
+            if (poolsData.length === 0) {
+                loadSampleData();
             }
             renderTable();
+            updateDashboard();
+            initCharts();
+        };
+
+        function loadSampleData() {
+            poolsData = [
+                {
+                    dex: 'PancakeSwap',
+                    chain: 'Polygon',
+                    pair: 'MATIC/USDC',
+                    applied: 619.17,
+                    fees: 231.39,
+                    withdrawals: 0,
+                    balance: 850.56,
+                    apy: 53.26,
+                    roi: 37.38,
+                    daily: 1.84
+                },
+                {
+                    dex: 'PancakeSwap',
+                    chain: 'Polygon',
+                    pair: 'WETH/USDC',
+                    applied: 210.86,
+                    fees: 182.69,
+                    withdrawals: 0,
+                    balance: 393.55,
+                    apy: 27.41,
+                    roi: 36.82,
+                    daily: 1.23
+                }
+            ];
         }
 
-        // Renderizar tabela
+        // Tab Switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Auto Import from API
+        async function importFromAPI() {
+            const url = document.getElementById('projectUrl').value.trim();
+            const chain = document.getElementById('blockchain').value;
+            const name = document.getElementById('projectName').value.trim();
+            const invested = parseFloat(document.getElementById('investedAmount').value) || 0;
+
+            if (!url) {
+                alert('Por favor, insira a URL ou endereço do contrato');
+                return;
+            }
+
+            document.getElementById('loadingOverlay').classList.add('show');
+
+            try {
+                let data = {};
+
+                // Check if it's a DefiLlama URL
+                if (url.includes('defillama')) {
+                    const protocolId = url.split('/').pop();
+                    data = await fetchDefiLlamaData(protocolId);
+                } else if (url.startsWith('0x')) {
+                    // It's a contract address
+                    data = await fetchContractData(url, chain);
+                } else {
+                    // Search by name
+                    data = await searchProtocol(name || url);
+                }
+
+                if (data) {
+                    importedData = {
+                        ...data,
+                        chain: chain,
+                        applied: invested,
+                        dex: data.protocol || 'Unknown',
+                        pair: data.pair || name || 'Imported Pool'
+                    };
+                    showImportPreview(importedData);
+                } else {
+                    alert('Nenhum dado encontrado. Verifique a URL ou tente buscar pelo nome do protocolo.');
+                }
+
+            } catch (error) {
+                console.error('Import error:', error);
+                alert('Erro ao importar dados: ' + error.message);
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('show');
+            }
+        }
+
+        async function fetchDefiLlamaData(protocolId) {
+            try {
+                const response = await fetch(`${APIS.defillama/protocol/${protocolId}`);
+                const data = await response.json();
+                
+                return {
+                    protocol: data.name,
+                    tvl: data.tvl,
+                    apy: data.apy || 0,
+                    volume24h: data.volume24h || 0,
+                    change24h: data.change_1d || 0,
+                    chains: data.chains
+                };
+            } catch (error) {
+                console.error('DefiLlama error:', error);
+                return null;
+            }
+        }
+
+        async function fetchContractData(address, chain) {
+            try {
+                // Use DexScreener for token/pair data
+                const response = await fetch(`${APIS.dexscreener}/pairs/${chain}/${address}`);
+                const data = await response.json();
+                
+                if (data.pairs && data.pairs.length > 0) {
+                    const pair = data.pairs[0];
+                    return {
+                        pair: `${pair.baseToken.symbol}/${pair.quoteToken.symbol}`,
+                        tvl: pair.liquidity?.usd || 0,
+                        volume24h: pair.volume?.h24 || 0,
+                        priceChange24h: pair.priceChange?.h24 || 0,
+                        apy: calculateAPYFromVolume(pair.volume?.h24 || 0, pair.liquidity?.usd || 0)
+                    };
+                }
+                return null;
+            } catch (error) {
+                console.error('Contract data error:', error);
+                return null;
+            }
+        }
+
+        async function searchProtocol(query) {
+            try {
+                const response = await fetch(`${APIS.defillama}/protocols`);
+                const protocols = await response.json();
+                
+                const found = protocols.find(p => 
+                    p.name.toLowerCase().includes(query.toLowerCase()) ||
+                    p.symbol?.toLowerCase().includes(query.toLowerCase())
+                );
+                
+                if (found) {
+                    return await fetchDefiLlamaData(found.slug);
+                }
+                return null;
+            } catch (error) {
+                console.error('Search error:', error);
+                return null;
+            }
+        }
+
+        function calculateAPYFromVolume(volume24h, liquidity) {
+            // Simplified APY calculation based on volume and fees
+            const dailyFees = volume24h * 0.003; // 0.3% fee
+            const dailyYield = dailyFees / liquidity;
+            const apy = (Math.pow(1 + dailyYield, 365) - 1) * 100;
+            return apy.toFixed(2);
+        }
+
+        function showImportPreview(data) {
+            const preview = document.getElementById('importPreview');
+            const content = document.getElementById('previewContent');
+            
+            content.innerHTML = `
+                <div class="alert alert-success">
+                    ✅ Dados encontrados com sucesso!
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Protocolo/DEX</div>
+                        <div style="font-weight: 600; font-size: 14px;">${data.protocol || data.pair}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">TVL</div>
+                        <div style="font-weight: 600; font-size: 14px;">$${formatNumber(data.tvl)}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">APY Estimado</div>
+                        <div style="font-weight: 600; font-size: 14px; color: var(--success);">${data.apy}%</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Volume 24h</div>
+                        <div style="font-weight: 600; font-size: 14px;">$${formatNumber(data.volume24h)}</div>
+                    </div>
+                </div>
+            `;
+            
+            preview.style.display = 'block';
+            preview.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function confirmImport() {
+            if (!importedData) return;
+
+            const pool = {
+                dex: importedData.dex || importedData.protocol || 'Imported',
+                chain: importedData.chain,
+                pair: importedData.pair,
+                applied: importedData.applied || 0,
+                fees: 0,
+                withdrawals: 0,
+                balance: importedData.applied || 0,
+                apy: parseFloat(importedData.apy) || 0,
+                roi: 0,
+                daily: 0,
+                tvl: importedData.tvl || 0,
+                volume24h: importedData.volume24h || 0
+            };
+
+            poolsData.push(pool);
+            saveData();
+            renderTable();
+            updateDashboard();
+            
+            alert('Pool importada com sucesso!');
+            document.getElementById('importPreview').style.display = 'none';
+            switchTab('pools');
+        }
+
+        // Table Functions
         function renderTable() {
-            const tbody = document.getElementById('tableBody');
+            const tbody = document.getElementById('poolsTableBody');
             tbody.innerHTML = '';
 
             poolsData.forEach((pool, index) => {
+                const diff = pool.balance - pool.applied;
+                const impact = pool.applied > 0 ? (diff / pool.applied) * 100 : 0;
+                const roi = pool.applied > 0 ? ((pool.fees - pool.withdrawals) / pool.applied) * 100 : 0;
+                const daily = pool.apy > 0 ? pool.apy / 365 : 0;
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><input type="text" class="cell-input" value="${pool.dex}" onchange="updatePool(${index}, 'dex', this.value)"></td>
+                    <td><span class="badge badge-info">${pool.chain}</span></td>
                     <td><input type="text" class="cell-input" value="${pool.pair}" onchange="updatePool(${index}, 'pair', this.value)"></td>
-                    <td><input type="number" class="cell-input cell-number" value="${pool.contribution}" onchange="updatePool(${index}, 'contribution', parseFloat(this.value))"></td>
                     <td><input type="number" class="cell-input cell-number" value="${pool.applied}" onchange="updatePool(${index}, 'applied', parseFloat(this.value))"></td>
-                    <td><input type="text" class="cell-input" value="${pool.start}" onchange="updatePool(${index}, 'start', this.value)"></td>
-                    <td><input type="number" class="cell-input cell-number" value="${pool.range}" onchange="updatePool(${index}, 'range', parseFloat(this.value))"></td>
-                    <td><input type="number" class="cell-input cell-number" value="${pool.fees}" onchange="updatePool(${index}, 'fees', parseFloat(this.value)); calculateRO(${index});"></td>
-                    <td class="cell-number ${getROClass(pool.ro)}">${pool.ro.toFixed(2)}%</td>
-                    <td><input type="text" class="cell-input" value="${pool.end}" onchange="updatePool(${index}, 'end', this.value)"></td>
-                    <td><input type="text" class="cell-input" value="${pool.il}" onchange="updatePool(${index}, 'il', this.value)"></td>
+                    <td><input type="number" class="cell-input cell-number" value="${pool.fees}" onchange="updatePool(${index}, 'fees', parseFloat(this.value))"></td>
+                    <td><input type="number" class="cell-input cell-number" value="${pool.withdrawals}" onchange="updatePool(${index}, 'withdrawals', parseFloat(this.value))"></td>
                     <td class="cell-number">${pool.balance.toFixed(2)}</td>
+                    <td class="cell-number ${diff >= 0 ? 'positive' : 'negative'}">${diff.toFixed(2)}</td>
+                    <td class="cell-number ${impact >= 0 ? 'positive' : 'negative'}">${impact.toFixed(2)}%</td>
+                    <td class="cell-number ${roi >= 0 ? 'positive' : 'negative'}">${roi.toFixed(2)}%</td>
+                    <td class="cell-number">${daily.toFixed(2)}%</td>
+                    <td><input type="number" class="cell-input cell-number" value="${pool.apy}" onchange="updatePool(${index}, 'apy', parseFloat(this.value))"></td>
+                    <td>
+                        <button class="btn btn-white" onclick="deletePool(${index})" style="padding: 4px 8px;">🗑️</button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -394,148 +1327,169 @@
             updateTotals();
         }
 
-        // Atualizar pool
         function updatePool(index, field, value) {
             poolsData[index][field] = value;
-            if (field === 'fees' || field === 'applied') {
-                calculateRO(index);
+            
+            // Auto-calculate balance
+            if (field === 'applied' || field === 'fees' || field === 'withdrawals') {
+                poolsData[index].balance = poolsData[index].applied + poolsData[index].fees - poolsData[index].withdrawals;
             }
-            if (field === 'fees' || field === 'applied' || field === 'contribution') {
-                calculateBalance(index);
-            }
-            updateTotals();
+            
             saveData();
+            renderTable();
+            updateDashboard();
         }
 
-        // Calcular RO
-        function calculateRO(index) {
-            const pool = poolsData[index];
-            if (pool.applied > 0) {
-                pool.ro = (pool.fees / pool.applied) * 100;
+        function deletePool(index) {
+            if (confirm('Deseja remover esta pool?')) {
+                poolsData.splice(index, 1);
+                saveData();
                 renderTable();
+                updateDashboard();
             }
         }
 
-        // Calcular saldo
-        function calculateBalance(index) {
-            const pool = poolsData[index];
-            pool.balance = pool.applied + pool.fees;
-            renderTable();
-        }
-
-        // Calcular todos
-        function calculateAll() {
-            poolsData.forEach((pool, index) => {
-                calculateRO(index);
-                calculateBalance(index);
-            });
-            alert('Cálculos realizados com sucesso!');
-        }
-
-        // Classe para RO
-        function getROClass(ro) {
-            if (ro > 5) return 'positive';
-            if (ro < 0) return 'negative';
-            return '';
-        }
-
-        // Adicionar nova linha
         function addNewRow() {
             poolsData.push({
                 dex: '',
+                chain: 'Ethereum',
                 pair: '',
-                contribution: 0,
                 applied: 0,
-                start: new Date().toLocaleDateString('pt-BR'),
-                range: 0,
                 fees: 0,
-                ro: 0,
-                end: '',
-                il: '',
-                balance: 0
+                withdrawals: 0,
+                balance: 0,
+                apy: 0,
+                roi: 0,
+                daily: 0
             });
             renderTable();
         }
 
-        // Atualizar totais
         function updateTotals() {
             const totalApplied = poolsData.reduce((sum, p) => sum + (parseFloat(p.applied) || 0), 0);
             const totalFees = poolsData.reduce((sum, p) => sum + (parseFloat(p.fees) || 0), 0);
+            const totalWithdrawals = poolsData.reduce((sum, p) => sum + (parseFloat(p.withdrawals) || 0), 0);
             const totalBalance = poolsData.reduce((sum, p) => sum + (parseFloat(p.balance) || 0), 0);
-            const avgRO = poolsData.length > 0 ? poolsData.reduce((sum, p) => sum + (parseFloat(p.ro) || 0), 0) / poolsData.length : 0;
+            const totalDiff = totalBalance - totalApplied;
+            const avgImpact = totalApplied > 0 ? (totalDiff / totalApplied) * 100 : 0;
+            const avgROI = totalApplied > 0 ? ((totalFees - totalWithdrawals) / totalApplied) * 100 : 0;
+            const avgAPY = poolsData.length > 0 ? poolsData.reduce((sum, p) => sum + (parseFloat(p.apy) || 0), 0) / poolsData.length : 0;
+            const avgDaily = avgAPY / 365;
 
             document.getElementById('totalApplied').textContent = '$' + totalApplied.toFixed(2);
             document.getElementById('totalFees').textContent = '$' + totalFees.toFixed(2);
+            document.getElementById('totalWithdrawals').textContent = '$' + totalWithdrawals.toFixed(2);
             document.getElementById('totalBalance').textContent = '$' + totalBalance.toFixed(2);
-            document.getElementById('avgRO').textContent = avgRO.toFixed(2) + '%';
+            document.getElementById('totalDiff').textContent = '$' + totalDiff.toFixed(2);
+            document.getElementById('avgImpact').textContent = avgImpact.toFixed(2) + '%';
+            document.getElementById('avgROI').textContent = avgROI.toFixed(2) + '%';
+            document.getElementById('avgDaily').textContent = avgDaily.toFixed(2) + '%';
+            document.getElementById('avgAPY').textContent = avgAPY.toFixed(2) + '%';
         }
 
-        // Salvar dados
+        // Dashboard
+        function updateDashboard() {
+            const totalTVL = poolsData.reduce((sum, p) => sum + (parseFloat(p.tvl) || p.applied), 0);
+            const totalFees = poolsData.reduce((sum, p) => sum + (parseFloat(p.fees) || 0), 0);
+            const avgROI = poolsData.length > 0 ? poolsData.reduce((sum, p) => sum + (parseFloat(p.roi) || 0), 0) / poolsData.length : 0;
+
+            document.getElementById('kpiTVL').textContent = '$' + formatNumber(totalTVL);
+            document.getElementById('kpiFees').textContent = '$' + formatNumber(totalFees);
+            document.getElementById('kpiROI').textContent = avgROI.toFixed(2) + '%';
+            document.getElementById('kpiPools').textContent = poolsData.length;
+
+            // Analytics
+            if (poolsData.length > 0) {
+                const sorted = [...poolsData].sort((a, b) => (b.roi || 0) - (a.roi || 0));
+                document.getElementById('bestPool').textContent = sorted[0].pair || sorted[0].dex;
+                document.getElementById('worstPool').textContent = sorted[sorted.length - 1].pair || sorted[sorted.length - 1].dex;
+                
+                const netProfit = totalFees - poolsData.reduce((sum, p) => sum + (parseFloat(p.withdrawals) || 0), 0);
+                document.getElementById('netProfit').textContent = '$' + formatNumber(netProfit);
+            }
+        }
+
+        // Charts
+        function initCharts() {
+            // TVL Chart
+            const tvlCtx = document.getElementById('tvlChart').getContext('2d');
+            charts.tvl = new Chart(tvlCtx, {
+                type: 'line',
+                data: {
+                    labels: ['7d ago', '6d ago', '5d ago', '4d ago', '3d ago', '2d ago', 'Today'],
+                    datasets: [{
+                        label: 'TVL',
+                        data: poolsData.map(p => p.tvl || p.applied),
+                        borderColor: '#217346',
+                        backgroundColor: 'rgba(33, 115, 70, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Chain Distribution
+            const chainCtx = document.getElementById('chainChart').getContext('2d');
+            const chains = {};
+            poolsData.forEach(p => {
+                chains[p.chain] = (chains[p.chain] || 0) + (parseFloat(p.applied) || 0);
+            });
+
+            charts.chain = new Chart(chainCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(chains),
+                    datasets: [{
+                        data: Object.values(chains),
+                        backgroundColor: ['#217346', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Utilities
+        function formatNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(2) + 'K';
+            return num.toFixed(2);
+        }
+
         function saveData() {
-            localStorage.setItem('lp_pools_data', JSON.stringify(poolsData));
-            // Mostrar mensagem breve
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<span>✓</span> Salvo!';
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-            }, 2000);
+            localStorage.setItem('lp_pools', JSON.stringify(poolsData));
         }
 
-        // Exportar para Excel
+        function refreshAll() {
+            updateDashboard();
+            initCharts();
+            alert('Dados atualizados!');
+        }
+
         function exportToExcel() {
             const wb = XLSX.utils.book_new();
-            
-            const wsData = poolsData.map(pool => ({
-                'DEX': pool.dex,
-                'PAR': pool.pair,
-                'NOVA CONTRIBUIÇÃO ($)': pool.contribution,
-                'VALOR APLICADO ($)': pool.applied,
-                'INÍCIO': pool.start,
-                'RANGE (%)': pool.range,
-                'FEES ($)': pool.fees,
-                'RO (%)': pool.ro.toFixed(2),
-                'FIM': pool.end,
-                'IMPERMANENT LOSS': pool.il,
-                'SALDO FINAL ($)': pool.balance.toFixed(2)
-            }));
-
-            const ws = XLSX.utils.json_to_sheet(wsData);
-            
-            // Ajustar largura das colunas
-            const wscols = [
-                {wch: 15}, {wch: 15}, {wch: 20}, {wch: 18},
-                {wch: 12}, {wch: 10}, {wch: 12}, {wch: 10},
-                {wch: 12}, {wch: 18}, {wch: 15}
-            ];
-            ws['!cols'] = wscols;
-
-            XLSX.utils.book_append_sheet(wb, ws, "PULSE");
-            XLSX.writeFile(wb, `Liquidity_Pools_${new Date().toISOString().split('T')[0]}.xlsx`);
+            const ws = XLSX.utils.json_to_sheet(poolsData);
+            XLSX.utils.book_append_sheet(wb, ws, 'Pools');
+            XLSX.writeFile(wb, `LP_Manager_${new Date().toISOString().split('T')[0]}.xlsx`);
         }
 
-        // Filtrar tabela
-        document.querySelectorAll('.filter-input').forEach(input => {
-            input.addEventListener('input', function() {
-                const filters = Array.from(document.querySelectorAll('.filter-input')).map(i => i.value.toLowerCase());
-                const rows = document.querySelectorAll('#tableBody tr');
-                
-                rows.forEach((row, index) => {
-                    const dex = row.cells[0].querySelector('input').value.toLowerCase();
-                    const pair = row.cells[1].querySelector('input').value.toLowerCase();
-                    
-                    const matchDex = !filters[0] || dex.includes(filters[0]);
-                    const matchPair = !filters[1] || pair.includes(filters[1]);
-                    
-                    row.style.display = (matchDex && matchPair) ? '' : 'none';
-                });
-            });
-        });
-
-        // Inicializar
-        window.onload = function() {
-            loadData();
-        };
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
     </script>
 </body>
 </html>
